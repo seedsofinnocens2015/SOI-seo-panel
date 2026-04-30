@@ -19,7 +19,7 @@ const PAGE_TREE = [
   {
     label: 'Home',
     children: [
-      { label: 'Home Page', value: '/home' },
+      { label: 'Home Page', value: '/' },
 
       {
         label: 'Home FAQs',
@@ -1194,15 +1194,24 @@ export default function HomePage() {
   if (!isAuthenticated) {
     return (
       <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
-        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
-          <h1 className="text-2xl font-bold text-zinc-900">SEO Panel Access</h1>
-          <p className="mt-1 text-sm text-zinc-600">
+        <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl">
+          <Image
+            src="/admin/soi-admin-panel/Header Logo.svg"
+            alt="Seeds of Innocence"
+            width={280}
+            height={86}
+            priority
+            className="mx-auto h-auto w-auto max-w-[280px]"
+          />
+          <h1 className="mt-4 text-center text-3xl font-bold text-zinc-900">SEO Panel Access</h1>
+          <p className="mt-2 text-center text-base text-zinc-600">
             {authStep === 'credentials'
               ? `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
               : 'Enter OTP sent to your email to continue.'}
           </p>
 
-          <div className="mt-4 inline-flex rounded-xl bg-zinc-100 p-1">
+          <div className="mt-5 flex justify-center">
+            <div className="inline-flex rounded-xl bg-zinc-100 p-1.5">
             <button
               type="button"
               onClick={() => {
@@ -1214,7 +1223,7 @@ export default function HomePage() {
                 setAuthInfo('');
                 setAuthForm((prev) => ({ ...prev, otp: '' }));
               }}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+              className={`rounded-lg px-6 py-2.5 text-base font-semibold ${
                 authMode === 'login' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
               }`}
             >
@@ -1231,15 +1240,16 @@ export default function HomePage() {
                 setAuthInfo('');
                 setAuthForm((prev) => ({ ...prev, otp: '' }));
               }}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+              className={`rounded-lg px-6 py-2.5 text-base font-semibold ${
                 authMode === 'signup' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
               }`}
             >
               Signup
             </button>
+            </div>
           </div>
 
-          <form className="mt-5 space-y-4" onSubmit={handleAuthSubmit}>
+          <form className="mx-auto mt-6 w-full max-w-lg space-y-4" onSubmit={handleAuthSubmit}>
             {authStep === 'credentials' && authMode === 'signup' ? (
               <input
                 type="text"
@@ -1247,7 +1257,7 @@ export default function HomePage() {
                 value={authForm.name}
                 onChange={handleAuthFieldChange}
                 placeholder="Full name"
-                className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
               />
             ) : null}
             <input
@@ -1257,7 +1267,7 @@ export default function HomePage() {
               onChange={handleAuthFieldChange}
               placeholder="Email"
               disabled={authStep === 'otp'}
-              className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20 disabled:cursor-not-allowed disabled:bg-zinc-100"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20 disabled:cursor-not-allowed disabled:bg-zinc-100"
             />
             {authStep === 'credentials' ? (
               <div>
@@ -1268,7 +1278,7 @@ export default function HomePage() {
                     value={authForm.password}
                     onChange={handleAuthFieldChange}
                     placeholder="Password"
-                    className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 pr-12 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                    className="w-full rounded-xl border border-zinc-300 px-4 py-3 pr-12 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
                   />
                   <button
                     type="button"
@@ -1277,14 +1287,16 @@ export default function HomePage() {
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? '🙈' : '👁️'}
+                    {showPassword ? '🙈' : '👀'}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">Password minimum 10 characters hona chahiye.</p>
+                <p className="mt-2 text-center text-sm text-zinc-500">Password minimum 10 characters hona chahiye.</p>
               </div>
             ) : (
               <div>
-                <p className="mb-2 text-xs font-semibold text-zinc-600">OTP Timer: 00:{String(otpTimer).padStart(2, '0')}</p>
+                <p className="mb-2 text-center text-sm font-semibold text-zinc-600">
+                  OTP Timer: 00:{String(otpTimer).padStart(2, '0')}
+                </p>
                 <input
                   type="text"
                   name="otp"
@@ -1292,14 +1304,14 @@ export default function HomePage() {
                   onChange={handleAuthFieldChange}
                   placeholder="Enter 4-digit OTP"
                   maxLength={4}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-center text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
                 />
               </div>
             )}
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full rounded-xl bg-[#df3655] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c92c49] disabled:opacity-60"
+              className="w-full rounded-xl bg-[#df3655] px-4 py-3 text-base font-semibold text-white transition hover:bg-[#c92c49] disabled:opacity-60"
             >
               {authLoading
                 ? 'Please wait...'
@@ -1317,7 +1329,7 @@ export default function HomePage() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={authLoading || otpTimer > 0}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {otpTimer > 0 ? `Resend OTP in 00:${String(otpTimer).padStart(2, '0')}` : 'Resend OTP'}
                 </button>
@@ -1330,7 +1342,7 @@ export default function HomePage() {
                     setAuthInfo('');
                     setAuthForm((prev) => ({ ...prev, otp: '' }));
                   }}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base font-semibold text-zinc-700 transition hover:bg-zinc-100"
                 >
                   Back
                 </button>
@@ -1338,8 +1350,8 @@ export default function HomePage() {
             ) : null}
           </form>
 
-          {authInfo ? <p className="mt-3 text-sm text-green-700">{authInfo}</p> : null}
-          {authError ? <p className="mt-3 text-sm text-red-600">{authError}</p> : null}
+          {authInfo ? <p className="mt-4 text-center text-sm text-green-700">{authInfo}</p> : null}
+          {authError ? <p className="mt-4 text-center text-sm text-red-600">{authError}</p> : null}
         </div>
       </main>
     );
@@ -1354,7 +1366,7 @@ export default function HomePage() {
         >
           <div className="shrink-0 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
             <Image
-              src="/Header Logo.svg"
+              src="/admin/soi-admin-panel/Header Logo.svg"
               alt="Seeds of Innocence"
               width={220}
               height={68}
