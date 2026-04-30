@@ -1,12 +1,37 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import SeoForm from './components/SeoForm';
-import { fetchSeo, saveSeo } from '../lib/seoApi';
+import { fetchSeo, fetchSeoStats, saveSeo } from '../lib/seoApi';
+import {
+  clearAuthSession,
+  getAuthToken,
+  getStoredUser,
+  requestLoginOtp,
+  requestSignupOtp,
+  saveAuthSession,
+  verifyLoginOtp,
+  verifySignupOtp,
+} from '../lib/authApi';
 
 const PAGE_TREE = [
-  { label: 'Home', value: '/' },
+  {
+    label: 'Home',
+    children: [
+      { label: 'Home Page', value: '/home' },
+
+      {
+        label: 'Home FAQs',
+        children: [
+          { label: 'Female FAQs', value: '/female-faqs' },
+          { label: 'Genetic FAQs', value: '/genetic-faqs' },
+          { label: 'Learning FAQs', value: '/learning-faqs' },
+          { label: 'Male FAQs', value: '/male-faqs' },
+        ],
+      },
+    ],
+  },
   {
     label: 'Infertility Treatment',
     children: [
@@ -288,7 +313,6 @@ const PAGE_TREE = [
   {
     label: 'Resources',
     children: [
-      { label: 'Resources Overview', value: '/resources' },
       { label: 'IVF Process / Patient Journey', value: '/resources/ivf-process-patient-journey' },
       { label: 'FAQs', value: '/resources/faqs' },
       { label: 'Patient Testimonial Videos', value: '/resources/patient-testimonial-videos' },
@@ -298,7 +322,6 @@ const PAGE_TREE = [
   {
     label: 'About Us',
     children: [
-      { label: 'About us Overview', value: '/about' },
       { label: 'Our Story', value: '/about/our-story' },
       { label: 'Dr. Gauri Agrawal – Founder', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist/' },
       { label: 'Leadership Team', value: '/about/leadership-team' },
@@ -313,14 +336,43 @@ const PAGE_TREE = [
     label: 'Doctors',
     children: [
       { label: 'All IVF Specialists', value: '/ivf-doctor' },
-      { label: 'Maternal–Fetal Medicine Specialists', value: '/ivf-doctor/maternal-fetal-medicine' },
+      {
+        label: 'All IVF Specialists - Profiles',
+        children: [
+          { label: 'Dr. Gauri Agarwal', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist' },
+          { label: 'Dr. Alpana Razadan', value: '/genetic-expert/dr-alpana-razadan' },
+          { label: 'Dr. Lisha Singh', value: '/ivf-doctor/dr-lisha-singh-ivf-specialist' },
+          { label: 'Dr. Monika Maan', value: '/ivf-doctor/dr-monika-mann-ivf-specialist' },
+          { label: 'Dr. Pratik Kakani', value: '/ivf-doctor/dr-pratik-kakani-ivf-specialists' },
+          { label: 'Dr. Disha Datta', value: '/ivf-doctor/dr-disha-datta-choudhury-ivf-specialist' },
+          { label: 'Dr. Aiman Akram', value: '/ivf-doctor/dr-aiman-akram-ivf-specialist' },
+          { label: 'Dr. Nivedita Nehal', value: '/ivf-doctor/dr-nivedita-nehal-ivf-specialist' },
+          { label: 'Dr. Britika Prakash', value: '/ivf-doctor/dr-britika-prakash-ivf-specialist' },
+          { label: 'Dr. Preeti', value: '/ivf-doctor/dr-preeti-ivf-specialist' },
+          { label: 'Dr. Varkha Chandra', value: '/ivf-doctor/dr-varkha-chandra-ivf-specialist' },
+          { label: 'Dr. Debilina Roy', value: '/ivf-doctor/dr-debilina-roy-ivf-specialist' },
+          { label: 'Dr. Sanjana Singh', value: '/ivf-doctor/dr-sanjana-singh-ivf-specialist' },
+          { label: 'Dr. Aditi Bhatnagar', value: '/ivf-doctor/dr-aditi-bhatnagar-ivf-specialist' },
+          { label: 'Dr. Beena Upadhyay', value: '/ivf-doctor/dr-beena-upadhyay-ivf-specialist' },
+          { label: 'Dr. Kriti Prasad', value: '/ivf-doctor/dr-kriti-prasad-ivf-specialist' },
+          { label: 'Dr. Pallavi Shrivastava', value: '/ivf-doctor/dr-pallavi-shrivastava-ivf-specialist' },
+          { label: 'Dr. Julie Chhawchharia', value: '/ivf-doctor/dr-julie-chhawchharia-ivf-specialist' },
+          { label: 'Dr. Vinod Kumar B', value: '/ivf-doctor/dr-vinod-kumar-b-ivf-specialists' },
+          { label: 'Dr. Sonia Raju', value: '/ivf-doctor/dr-sonia-raju-aluvilayil-ivf-specialist' },
+          { label: 'Dr. Jasna Mohammed', value: '/ivf-doctor/dr-jasna-mohammed-ivf-specialist' },
+          { label: 'Dr. Sneha Narayan', value: '/ivf-doctor/dr-sneha-narayan-ivf-specialist' },
+          { label: 'Dr. Adrija Ghosal', value: '/ivf-doctor/dr-adrija-ghosal-ivf-specialist' },
+          { label: 'Dr. Rashmi Singh', value: '/ivf-doctor/dr-rashmi-singh-ivf-specialist' },
+          { label: 'Dr. Mangla Kawade', value: '/ivf-doctor/dr-mangla-kawade-ivf-specialist' },
+        ],
+      },
+      { label: 'Maternal-Fetal Medicine Specialists', value: '/ivf-doctor/maternal-fetal-medicine' },
       { label: 'Surgeon Panel', value: '/ivf-doctor/surgeon-panel' },
     ],
   },
   {
     label: 'Contact Us',
     children: [
-      { label: 'Contact Overview', value: '/contact' },
       { label: 'Book Appointment', value: '/contact/book-appointment' },
       { label: 'Online Payment', value: '/contact/online-payment' },
       { label: 'WhatsApp', value: '/contact/whatsapp' },
@@ -328,9 +380,26 @@ const PAGE_TREE = [
       { label: 'Centre Locator', value: '/contact/centre-locator' },
       { label: 'Careers', value: '/contact/careers' },
       { label: 'Feedback', value: '/contact/feedback' },
-      { label: 'Common SEO (Fallback)', value: 'common' },
     ],
   },
+  {
+    label: 'Training Academy',
+    children: [
+      { label: 'Training Programs Academy', value: '/training-academy' },
+      {
+        label: 'Andrology Technician Training Program',
+        value: '/training-academy/andrology-technician-training-program',
+      },
+      { label: 'Embryo Biopsy Training Program', value: '/training-academy/embryo-biopsy-training-program' },
+      { label: 'Embryologist Training Program', value: '/training-academy/embryologist-training-program' },
+      {
+        label: 'Gynecologic Surgical Training Program',
+        value: '/training-academy/gynecologic-surgical-training-program',
+      },
+      { label: 'Training Registration', value: '/training-academy/training-registration' },
+    ],
+  },
+  { label: 'Thank You Page', value: '/thank-you' },
 ];
 
 const SEO_FIELDS = [
@@ -373,7 +442,7 @@ const SEO_FIELDS = [
 ];
 
 function makeEmptySeo(pageUrl) {
-  const state = { pageUrl };
+  const state = { pageUrl, hierarchyPath: [] };
   SEO_FIELDS.forEach((field) => {
     state[field] = '';
   });
@@ -477,6 +546,7 @@ function getSectionAccentClass(topLevelLabel) {
     'About Us': 'from-violet-400/20 to-transparent text-violet-700',
     Doctors: 'from-sky-400/20 to-transparent text-sky-700',
     'Contact Us': 'from-orange-400/20 to-transparent text-orange-700',
+    'Training Academy': 'from-teal-400/20 to-transparent text-teal-700',
   };
   return accentMap[topLevelLabel] || 'from-zinc-300/30 to-transparent text-zinc-700';
 }
@@ -585,6 +655,7 @@ function flattenPageTree(nodes, trail = []) {
             label: node.label,
             value: node.value,
             pathTrail: nextTrail.join(' > '),
+            hierarchyPath: nextTrail.length > 1 ? nextTrail.slice(0, -1) : nextTrail,
             searchText: `${node.label} ${node.value} ${nextTrail.join(' ')}`.toLowerCase(),
           },
         ]
@@ -594,8 +665,82 @@ function flattenPageTree(nodes, trail = []) {
   });
 }
 
+function getUserInitials(name = '') {
+  const cleanedName = String(name || '').trim();
+  if (!cleanedName) return 'U';
+
+  const words = cleanedName.split(/\s+/).filter(Boolean);
+  return words
+    .slice(0, 3)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('');
+}
+
+const DASHBOARD_PAGE = '__dashboard__';
+const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
+const SEO_DRAFT_STORAGE_PREFIX = 'seoPanelDraft:';
+
+function getInitialSelectedPage() {
+  if (typeof window === 'undefined') return DASHBOARD_PAGE;
+  const savedPage = window.localStorage.getItem(SELECTED_PAGE_STORAGE_KEY);
+  return savedPage || DASHBOARD_PAGE;
+}
+
+function getSeoDraftStorageKey(pageUrl, hierarchyPath = []) {
+  return `${SEO_DRAFT_STORAGE_PREFIX}${pageUrl}::${JSON.stringify(hierarchyPath || [])}`;
+}
+
+function readSeoDraft(pageUrl, hierarchyPath = []) {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(getSeoDraftStorageKey(pageUrl, hierarchyPath));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSeoDraft(pageUrl, hierarchyPath = [], draft) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(getSeoDraftStorageKey(pageUrl, hierarchyPath), JSON.stringify(draft));
+  } catch {
+    // Ignore storage quota errors silently.
+  }
+}
+
+function clearSeoDraft(pageUrl, hierarchyPath = []) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(getSeoDraftStorageKey(pageUrl, hierarchyPath));
+}
+
+function getComparableSeoState(data = {}) {
+  const comparable = {};
+  SEO_FIELDS.forEach((field) => {
+    comparable[field] = String(data?.[field] ?? '');
+  });
+  return comparable;
+}
+
 export default function HomePage() {
-  const [selectedPage, setSelectedPage] = useState('/');
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getAuthToken()));
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
+  const [authMode, setAuthMode] = useState('login');
+  const [authStep, setAuthStep] = useState('credentials');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '' });
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+  const [selectedPage, setSelectedPage] = useState(getInitialSelectedPage);
   const [formData, setFormData] = useState(makeEmptySeo('/'));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -607,6 +752,18 @@ export default function HomePage() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [savedSeoSnapshot, setSavedSeoSnapshot] = useState(() =>
+    JSON.stringify(getComparableSeoState(makeEmptySeo('/')))
+  );
+  const [dashboardStats, setDashboardStats] = useState({
+    totalCount: 0,
+    updatedCount: 0,
+    notUpdatedCount: 0,
+    updatedPageUrls: [],
+    notUpdatedPageUrls: [],
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [activeDashboardList, setActiveDashboardList] = useState('all');
   const [expandedNodes, setExpandedNodes] = useState({
     'Infertility Treatment': true,
     'IVF Centres': true,
@@ -616,17 +773,58 @@ export default function HomePage() {
     'About Us': true,
     Doctors: true,
     'Contact Us': true,
+    'Training Academy': true,
     Delhi: true,
     'Uttar Pradesh': true,
   });
 
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
+  const isDashboardView = selectedPage === DASHBOARD_PAGE;
   const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
+  const pageMetaByValue = useMemo(
+    () => new Map(allPageOptions.map((item) => [item.value, item])),
+    [allPageOptions]
+  );
+  const selectedPageMeta = useMemo(
+    () => pageMetaByValue.get(selectedPage),
+    [pageMetaByValue, selectedPage]
+  );
+  const selectedHierarchyPath = useMemo(
+    () => selectedPageMeta?.hierarchyPath || [],
+    [selectedPageMeta]
+  );
+  const selectedHierarchyKey = useMemo(
+    () => JSON.stringify(selectedHierarchyPath),
+    [selectedHierarchyPath]
+  );
   const filteredSearchResults = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     if (!query) return [];
     return allPageOptions.filter((item) => item.searchText.includes(query)).slice(0, 8);
   }, [allPageOptions, searchText]);
+  const userInitials = useMemo(() => getUserInitials(currentUser?.name), [currentUser?.name]);
+  const pageOptionByUrl = useMemo(
+    () => new Map(allPageOptions.map((item) => [item.value, item])),
+    [allPageOptions]
+  );
+  const updatedPageOptions = useMemo(
+    () =>
+      (dashboardStats.updatedPageUrls || [])
+        .map((url) => pageOptionByUrl.get(url))
+        .filter(Boolean),
+    [dashboardStats.updatedPageUrls, pageOptionByUrl]
+  );
+  const notUpdatedPageOptions = useMemo(
+    () =>
+      (dashboardStats.notUpdatedPageUrls || [])
+        .map((url) => pageOptionByUrl.get(url))
+        .filter(Boolean),
+    [dashboardStats.notUpdatedPageUrls, pageOptionByUrl]
+  );
+  const isSeoSaved = useMemo(
+    () => JSON.stringify(getComparableSeoState(formData)) === savedSeoSnapshot,
+    [formData, savedSeoSnapshot]
+  );
 
   function handleToggleNode(nodeKey) {
     setExpandedNodes((prev) => ({ ...prev, [nodeKey]: !prev[nodeKey] }));
@@ -643,6 +841,11 @@ export default function HomePage() {
   }
 
   useEffect(() => {
+    if (!isAuthenticated || isDashboardView) {
+      return undefined;
+    }
+
+    const hierarchyPath = JSON.parse(selectedHierarchyKey);
     let isCancelled = false;
 
     async function loadSeo() {
@@ -651,16 +854,43 @@ export default function HomePage() {
       setErrorMessage('');
 
       try {
-        const seoData = await fetchSeo(targetPageUrl);
+        const seoData = await fetchSeo(targetPageUrl, hierarchyPath);
         if (isCancelled) return;
-        setFormData({
+        const baseData = {
           ...makeEmptySeo(targetPageUrl),
           ...seoData,
           pageUrl: targetPageUrl,
+          hierarchyPath,
+        };
+        const localDraft = readSeoDraft(targetPageUrl, hierarchyPath);
+        setFormData({
+          ...baseData,
+          ...(localDraft || {}),
+          pageUrl: targetPageUrl,
+          hierarchyPath,
         });
+        setSavedSeoSnapshot(JSON.stringify(getComparableSeoState(baseData)));
       } catch (error) {
         if (isCancelled) return;
-        setFormData(makeEmptySeo(targetPageUrl));
+        if (/unauthorized/i.test(error.message || '')) {
+          clearAuthSession();
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+          setErrorMessage('Session expired. Please login again.');
+          return;
+        }
+        const fallbackData = {
+          ...makeEmptySeo(targetPageUrl),
+          hierarchyPath,
+        };
+        const localDraft = readSeoDraft(targetPageUrl, hierarchyPath);
+        setFormData({
+          ...fallbackData,
+          ...(localDraft || {}),
+          pageUrl: targetPageUrl,
+          hierarchyPath,
+        });
+        setSavedSeoSnapshot(JSON.stringify(getComparableSeoState(fallbackData)));
         setErrorMessage(error.message || 'Unable to fetch SEO data');
       } finally {
         if (!isCancelled) {
@@ -673,7 +903,58 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [targetPageUrl]);
+  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !allPageOptions.length) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    async function loadStats() {
+      setStatsLoading(true);
+      try {
+        const stats = await fetchSeoStats(allPageOptions.map((item) => item.value));
+        if (isCancelled) return;
+        setDashboardStats({
+          totalCount: stats?.totalCount || allPageOptions.length,
+          updatedCount: stats?.updatedCount || 0,
+          notUpdatedCount: stats?.notUpdatedCount ?? Math.max(0, allPageOptions.length - (stats?.updatedCount || 0)),
+          updatedPageUrls: Array.isArray(stats?.updatedPageUrls) ? stats.updatedPageUrls : [],
+          notUpdatedPageUrls: Array.isArray(stats?.notUpdatedPageUrls) ? stats.notUpdatedPageUrls : [],
+        });
+      } catch {
+        if (isCancelled) return;
+        setDashboardStats({
+          totalCount: allPageOptions.length,
+          updatedCount: 0,
+          notUpdatedCount: allPageOptions.length,
+          updatedPageUrls: [],
+          notUpdatedPageUrls: allPageOptions.map((item) => item.value),
+        });
+      } finally {
+        if (!isCancelled) {
+          setStatsLoading(false);
+        }
+      }
+    }
+
+    loadStats();
+    return () => {
+      isCancelled = true;
+    };
+  }, [isAuthenticated, allPageOptions]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    window.localStorage.setItem(SELECTED_PAGE_STORAGE_KEY, selectedPage);
+  }, [isHydrated, selectedPage]);
+
+  useEffect(() => {
+    if (!isHydrated || !isAuthenticated || isDashboardView || loading) return;
+    if (formData?.pageUrl !== targetPageUrl) return;
+    saveSeoDraft(targetPageUrl, selectedHierarchyPath, formData);
+  }, [isHydrated, isAuthenticated, isDashboardView, loading, formData, targetPageUrl, selectedHierarchyKey, selectedHierarchyPath]);
 
   useEffect(() => {
     function handleMouseMove(event) {
@@ -754,18 +1035,314 @@ export default function HomePage() {
       const savedData = await saveSeo({
         ...payload,
         pageUrl: targetPageUrl,
+        hierarchyPath: selectedHierarchyPath,
       });
       setFormData({
         ...makeEmptySeo(targetPageUrl),
         ...savedData,
         pageUrl: targetPageUrl,
+        hierarchyPath: selectedHierarchyPath,
       });
+      setSavedSeoSnapshot(
+        JSON.stringify(
+          getComparableSeoState({
+            ...makeEmptySeo(targetPageUrl),
+            ...savedData,
+            pageUrl: targetPageUrl,
+            hierarchyPath: selectedHierarchyPath,
+          })
+        )
+      );
+      clearSeoDraft(targetPageUrl, selectedHierarchyPath);
       setSuccessMessage('SEO saved successfully.');
     } catch (error) {
+      if (/unauthorized/i.test(error.message || '')) {
+        clearAuthSession();
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+      }
       setErrorMessage(error.message || 'Unable to save SEO data');
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleAuthFieldChange(event) {
+    const { name, value } = event.target;
+    setAuthForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleLogout() {
+    clearAuthSession();
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    setAuthError('');
+    setIsUserMenuOpen(false);
+  }
+
+  useEffect(() => {
+    function handleDocumentClick(event) {
+      if (!userMenuRef.current) return;
+      if (!userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleDocumentClick);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, [isUserMenuOpen]);
+
+  useEffect(() => {
+    if (authStep !== 'otp' || otpTimer <= 0) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [authStep, otpTimer]);
+
+  async function handleResendOtp() {
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthInfo('');
+    try {
+      const payload = {
+        email: authForm.email.trim(),
+        password: authForm.password,
+      };
+
+      const response =
+        authMode === 'signup'
+          ? await requestSignupOtp({ ...payload, name: authForm.name.trim() })
+          : await requestLoginOtp(payload);
+
+      setOtpTimer(Number(response?.expiresInSeconds) || 60);
+      setAuthInfo('OTP resent successfully. Please check your email.');
+    } catch (error) {
+      setAuthError(error.message || 'Failed to resend OTP');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthInfo('');
+
+    try {
+      if (authStep === 'credentials') {
+        const payload = {
+          email: authForm.email.trim(),
+          password: authForm.password,
+        };
+
+        if (authMode === 'signup') {
+          const response = await requestSignupOtp({ ...payload, name: authForm.name.trim() });
+          setOtpTimer(Number(response?.expiresInSeconds) || 60);
+        } else {
+          const response = await requestLoginOtp(payload);
+          setOtpTimer(Number(response?.expiresInSeconds) || 60);
+        }
+
+        setAuthStep('otp');
+        setAuthInfo('OTP sent to your email. OTP is valid for 1 minute.');
+      } else {
+        const verifyPayload = {
+          email: authForm.email.trim(),
+          otp: authForm.otp.trim(),
+        };
+
+        const authResponse =
+          authMode === 'signup' ? await verifySignupOtp(verifyPayload) : await verifyLoginOtp(verifyPayload);
+
+        saveAuthSession(authResponse);
+        setCurrentUser(authResponse.user || null);
+        setIsAuthenticated(true);
+        setSelectedPage(DASHBOARD_PAGE);
+        setActiveDashboardList('all');
+        setAuthForm({ name: '', email: '', password: '', otp: '' });
+        setOtpTimer(0);
+        setAuthStep('credentials');
+      }
+    } catch (error) {
+      setAuthError(error.message || 'Authentication failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  if (!isHydrated) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
+        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
+          <p className="text-sm font-semibold text-zinc-700">Loading SEO Panel...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
+        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
+          <h1 className="text-2xl font-bold text-zinc-900">SEO Panel Access</h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            {authStep === 'credentials'
+              ? `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
+              : 'Enter OTP sent to your email to continue.'}
+          </p>
+
+          <div className="mt-4 inline-flex rounded-xl bg-zinc-100 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setAuthStep('credentials');
+                setShowPassword(false);
+                setOtpTimer(0);
+                setAuthError('');
+                setAuthInfo('');
+                setAuthForm((prev) => ({ ...prev, otp: '' }));
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                authMode === 'login' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+              }`}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signup');
+                setAuthStep('credentials');
+                setShowPassword(false);
+                setOtpTimer(0);
+                setAuthError('');
+                setAuthInfo('');
+                setAuthForm((prev) => ({ ...prev, otp: '' }));
+              }}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                authMode === 'signup' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+              }`}
+            >
+              Signup
+            </button>
+          </div>
+
+          <form className="mt-5 space-y-4" onSubmit={handleAuthSubmit}>
+            {authStep === 'credentials' && authMode === 'signup' ? (
+              <input
+                type="text"
+                name="name"
+                value={authForm.name}
+                onChange={handleAuthFieldChange}
+                placeholder="Full name"
+                className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+              />
+            ) : null}
+            <input
+              type="email"
+              name="email"
+              value={authForm.email}
+              onChange={handleAuthFieldChange}
+              placeholder="Email"
+              disabled={authStep === 'otp'}
+              className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20 disabled:cursor-not-allowed disabled:bg-zinc-100"
+            />
+            {authStep === 'credentials' ? (
+              <div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={authForm.password}
+                    onChange={handleAuthFieldChange}
+                    placeholder="Password"
+                    className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 pr-12 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 px-3 text-lg text-zinc-500 hover:text-zinc-700"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-zinc-500">Password minimum 10 characters hona chahiye.</p>
+              </div>
+            ) : (
+              <div>
+                <p className="mb-2 text-xs font-semibold text-zinc-600">OTP Timer: 00:{String(otpTimer).padStart(2, '0')}</p>
+                <input
+                  type="text"
+                  name="otp"
+                  value={authForm.otp}
+                  onChange={handleAuthFieldChange}
+                  placeholder="Enter 4-digit OTP"
+                  maxLength={4}
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                />
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full rounded-xl bg-[#df3655] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c92c49] disabled:opacity-60"
+            >
+              {authLoading
+                ? 'Please wait...'
+                : authStep === 'credentials'
+                  ? authMode === 'signup'
+                    ? 'Send OTP for Signup'
+                    : 'Send OTP for Login'
+                  : authMode === 'signup'
+                    ? 'Verify OTP and Create Account'
+                    : 'Verify OTP and Login'}
+            </button>
+            {authStep === 'otp' ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={authLoading || otpTimer > 0}
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {otpTimer > 0 ? `Resend OTP in 00:${String(otpTimer).padStart(2, '0')}` : 'Resend OTP'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthStep('credentials');
+                    setOtpTimer(0);
+                    setAuthError('');
+                    setAuthInfo('');
+                    setAuthForm((prev) => ({ ...prev, otp: '' }));
+                  }}
+                  className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                >
+                  Back
+                </button>
+              </div>
+            ) : null}
+          </form>
+
+          {authInfo ? <p className="mt-3 text-sm text-green-700">{authInfo}</p> : null}
+          {authError ? <p className="mt-3 text-sm text-red-600">{authError}</p> : null}
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -792,6 +1369,22 @@ export default function HomePage() {
 
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
             <ul className="space-y-1.5 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPage(DASHBOARD_PAGE);
+                    setActiveDashboardList('all');
+                  }}
+                  className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                    isDashboardView
+                      ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#df3655] ring-1 ring-[#df3655]/20'
+                      : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                  }`}
+                >
+                  Dashboard
+                </button>
+              </li>
               {PAGE_TREE.map((node) => (
                 <SidebarNode
                   key={node.value || node.label}
@@ -821,19 +1414,30 @@ export default function HomePage() {
           <div className="mx-auto h-full w-full max-w-[1200px] p-6">
             <div className="flex h-full flex-col bg-white p-6">
               <div className="shrink-0 border-b border-zinc-100 pb-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
+                <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_minmax(420px,560px)_auto] lg:items-start">
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
                     <h1 className="mt-1 text-2xl font-bold text-zinc-900">SEO Admin Panel</h1>
                     <p className="mt-2 text-sm text-zinc-600">
-                      Selected path:{' '}
+                      {isDashboardView ? 'Current view:' : 'Selected path:'}{' '}
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
-                        {targetPageUrl}
+                        {isDashboardView ? 'Dashboard' : targetPageUrl}
                       </span>
+                      {!isDashboardView ? (
+                        <span
+                          className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
+                            isSeoSaved
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {isSeoSaved ? 'Saved' : 'Not Saved'}
+                        </span>
+                      ) : null}
                     </p>
                   </div>
 
-                  <div className="relative w-full max-w-xl">
+                  <div className="relative w-full lg:justify-self-center">
                     <input
                       type="text"
                       value={searchText}
@@ -849,10 +1453,11 @@ export default function HomePage() {
                         }
                       }}
                       placeholder="Search by page name or path (e.g. IVF, /contact/whatsapp)"
+                      disabled={isDashboardView}
                       className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none transition focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
                     />
 
-                    {showSearchResults && searchText.trim() ? (
+                    {showSearchResults && searchText.trim() && !isDashboardView ? (
                       <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         {filteredSearchResults.length > 0 ? (
                           filteredSearchResults.map((item) => (
@@ -872,11 +1477,141 @@ export default function HomePage() {
                       </div>
                     ) : null}
                   </div>
+
+                  <div ref={userMenuRef} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                      className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${
+                        isUserMenuOpen
+                          ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
+                          : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
+                      }`}
+                      title="User menu"
+                      aria-label="User menu"
+                    >
+                      {userInitials}
+                      <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500" />
+                    </button>
+                    {isUserMenuOpen ? (
+                      <div className="absolute right-0 top-14 z-30 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+                        <div className="bg-gradient-to-r from-[#f8fbff] via-white to-[#fff3f6] px-4 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Signed in as</p>
+                          <p className="mt-1 text-sm font-bold text-zinc-900">{currentUser?.name || 'User'}</p>
+                          <p className="mt-1 text-xs text-zinc-600">{currentUser?.email || 'No email'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="m-3 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
               <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
-                {loading ? (
+                {isDashboardView ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <button
+                        type="button"
+                        onClick={() => setActiveDashboardList((prev) => (prev === 'all' ? null : 'all'))}
+                        className="rounded-2xl border border-zinc-200 bg-white p-4 text-left shadow-sm transition hover:border-[#2EA6F7]/40 hover:shadow-md"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Total Pages</p>
+                        <p className="mt-2 text-3xl font-bold text-zinc-900">{dashboardStats.totalCount}</p>
+                        <p className="mt-2 text-xs text-zinc-500">
+                          {activeDashboardList === 'all' ? 'Click to hide list' : 'Click to view all pages'}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDashboardList((prev) => (prev === 'updated' ? null : 'updated'))}
+                        className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-left shadow-sm transition hover:shadow-md"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">SEO Updated</p>
+                        <p className="mt-2 text-3xl font-bold text-emerald-700">
+                          {statsLoading ? '...' : dashboardStats.updatedCount}
+                        </p>
+                        <p className="mt-2 text-xs text-emerald-700/80">
+                          {activeDashboardList === 'updated' ? 'Click to hide list' : 'Click to view updated pages'}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDashboardList((prev) => (prev === 'notUpdated' ? null : 'notUpdated'))}
+                        className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-left shadow-sm transition hover:shadow-md"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">SEO Not Updated</p>
+                        <p className="mt-2 text-3xl font-bold text-amber-700">
+                          {statsLoading ? '...' : dashboardStats.notUpdatedCount}
+                        </p>
+                        <p className="mt-2 text-xs text-amber-700/80">
+                          {activeDashboardList === 'notUpdated' ? 'Click to hide list' : 'Click to view pending pages'}
+                        </p>
+                      </button>
+                    </div>
+                    {activeDashboardList ? (
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                        <h3 className="text-base font-bold text-zinc-900">
+                          {activeDashboardList === 'all'
+                            ? 'All Pages'
+                            : activeDashboardList === 'updated'
+                              ? 'SEO Updated Pages'
+                              : 'SEO Not Updated Pages'}
+                        </h3>
+                        <p className="mt-1 text-xs text-zinc-500">Page name and URL list</p>
+                        <div className="mt-3 max-h-[340px] overflow-auto rounded-xl border border-zinc-100">
+                          <table className="w-full border-collapse">
+                            <thead className="sticky top-0 bg-zinc-50">
+                              <tr>
+                                <th className="border-b border-zinc-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                  Page Name
+                                </th>
+                                <th className="border-b border-zinc-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                  Page URL
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(activeDashboardList === 'all'
+                                ? allPageOptions
+                                : activeDashboardList === 'updated'
+                                  ? updatedPageOptions
+                                  : notUpdatedPageOptions
+                              ).map((item) => (
+                                <tr key={`${item.value}-${item.pathTrail}`} className="odd:bg-white even:bg-zinc-50/40">
+                                  <td className="border-b border-zinc-100 px-3 py-2 text-sm text-zinc-800">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedPage(item.value)}
+                                      className="text-left font-medium text-[#1c7fbe] hover:underline"
+                                    >
+                                      {item.label}
+                                    </button>
+                                  </td>
+                                  <td className="border-b border-zinc-100 px-3 py-2 text-xs text-zinc-600">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedPage(item.value)}
+                                      className="text-left text-zinc-700 hover:text-[#1c7fbe] hover:underline"
+                                    >
+                                      {item.value}
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : loading ? (
                   <p className="text-sm text-zinc-600">Loading SEO data...</p>
                 ) : (
                   <form className="space-y-6">
