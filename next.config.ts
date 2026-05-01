@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/admin/soi-admin-panel",
+  basePath: "",
   trailingSlash: true,
   images: {
     unoptimized: true,

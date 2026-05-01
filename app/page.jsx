@@ -678,48 +678,11 @@ function getUserInitials(name = '') {
 
 const DASHBOARD_PAGE = '__dashboard__';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
-const SEO_DRAFT_STORAGE_PREFIX = 'seoPanelDraft:';
 
 function getInitialSelectedPage() {
   if (typeof window === 'undefined') return DASHBOARD_PAGE;
   const savedPage = window.localStorage.getItem(SELECTED_PAGE_STORAGE_KEY);
   return savedPage || DASHBOARD_PAGE;
-}
-
-function getSeoDraftStorageKey(pageUrl, hierarchyPath = []) {
-  return `${SEO_DRAFT_STORAGE_PREFIX}${pageUrl}::${JSON.stringify(hierarchyPath || [])}`;
-}
-
-function readSeoDraft(pageUrl, hierarchyPath = []) {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(getSeoDraftStorageKey(pageUrl, hierarchyPath));
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSeoDraft(pageUrl, hierarchyPath = [], draft) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(getSeoDraftStorageKey(pageUrl, hierarchyPath), JSON.stringify(draft));
-  } catch {
-    // Ignore storage quota errors silently.
-  }
-}
-
-function clearSeoDraft(pageUrl, hierarchyPath = []) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(getSeoDraftStorageKey(pageUrl, hierarchyPath));
-}
-
-function getComparableSeoState(data = {}) {
-  const comparable = {};
-  SEO_FIELDS.forEach((field) => {
-    comparable[field] = String(data?.[field] ?? '');
-  });
-  return comparable;
 }
 
 export default function HomePage() {
@@ -752,9 +715,6 @@ export default function HomePage() {
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [savedSeoSnapshot, setSavedSeoSnapshot] = useState(() =>
-    JSON.stringify(getComparableSeoState(makeEmptySeo('/')))
-  );
   const [dashboardStats, setDashboardStats] = useState({
     totalCount: 0,
     updatedCount: 0,
@@ -821,11 +781,6 @@ export default function HomePage() {
         .filter(Boolean),
     [dashboardStats.notUpdatedPageUrls, pageOptionByUrl]
   );
-  const isSeoSaved = useMemo(
-    () => JSON.stringify(getComparableSeoState(formData)) === savedSeoSnapshot,
-    [formData, savedSeoSnapshot]
-  );
-
   function handleToggleNode(nodeKey) {
     setExpandedNodes((prev) => ({ ...prev, [nodeKey]: !prev[nodeKey] }));
   }
@@ -862,14 +817,11 @@ export default function HomePage() {
           pageUrl: targetPageUrl,
           hierarchyPath,
         };
-        const localDraft = readSeoDraft(targetPageUrl, hierarchyPath);
         setFormData({
           ...baseData,
-          ...(localDraft || {}),
           pageUrl: targetPageUrl,
           hierarchyPath,
         });
-        setSavedSeoSnapshot(JSON.stringify(getComparableSeoState(baseData)));
       } catch (error) {
         if (isCancelled) return;
         if (/unauthorized/i.test(error.message || '')) {
@@ -883,14 +835,11 @@ export default function HomePage() {
           ...makeEmptySeo(targetPageUrl),
           hierarchyPath,
         };
-        const localDraft = readSeoDraft(targetPageUrl, hierarchyPath);
         setFormData({
           ...fallbackData,
-          ...(localDraft || {}),
           pageUrl: targetPageUrl,
           hierarchyPath,
         });
-        setSavedSeoSnapshot(JSON.stringify(getComparableSeoState(fallbackData)));
         setErrorMessage(error.message || 'Unable to fetch SEO data');
       } finally {
         if (!isCancelled) {
@@ -949,12 +898,6 @@ export default function HomePage() {
     if (!isHydrated) return;
     window.localStorage.setItem(SELECTED_PAGE_STORAGE_KEY, selectedPage);
   }, [isHydrated, selectedPage]);
-
-  useEffect(() => {
-    if (!isHydrated || !isAuthenticated || isDashboardView || loading) return;
-    if (formData?.pageUrl !== targetPageUrl) return;
-    saveSeoDraft(targetPageUrl, selectedHierarchyPath, formData);
-  }, [isHydrated, isAuthenticated, isDashboardView, loading, formData, targetPageUrl, selectedHierarchyKey, selectedHierarchyPath]);
 
   useEffect(() => {
     function handleMouseMove(event) {
@@ -1043,17 +986,6 @@ export default function HomePage() {
         pageUrl: targetPageUrl,
         hierarchyPath: selectedHierarchyPath,
       });
-      setSavedSeoSnapshot(
-        JSON.stringify(
-          getComparableSeoState({
-            ...makeEmptySeo(targetPageUrl),
-            ...savedData,
-            pageUrl: targetPageUrl,
-            hierarchyPath: selectedHierarchyPath,
-          })
-        )
-      );
-      clearSeoDraft(targetPageUrl, selectedHierarchyPath);
       setSuccessMessage('SEO saved successfully.');
     } catch (error) {
       if (/unauthorized/i.test(error.message || '')) {
@@ -1196,7 +1128,7 @@ export default function HomePage() {
       <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
         <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl">
           <Image
-            src="/admin/soi-admin-panel/Header Logo.svg"
+            src="/Header Logo.svg"
             alt="Seeds of Innocence"
             width={280}
             height={86}
@@ -1366,7 +1298,7 @@ export default function HomePage() {
         >
           <div className="shrink-0 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
             <Image
-              src="/admin/soi-admin-panel/Header Logo.svg"
+              src="/Header Logo.svg"
               alt="Seeds of Innocence"
               width={220}
               height={68}
@@ -1435,17 +1367,6 @@ export default function HomePage() {
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
                         {isDashboardView ? 'Dashboard' : targetPageUrl}
                       </span>
-                      {!isDashboardView ? (
-                        <span
-                          className={`ml-2 rounded-full px-2 py-1 text-xs font-semibold ${
-                            isSeoSaved
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {isSeoSaved ? 'Saved' : 'Not Saved'}
-                        </span>
-                      ) : null}
                     </p>
                   </div>
 
