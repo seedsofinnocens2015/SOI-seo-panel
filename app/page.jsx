@@ -554,19 +554,26 @@ function getSectionAccentClass(topLevelLabel) {
 function SidebarNode({
   node,
   selectedPage,
+  selectedSectionKey,
   expandedNodes,
   onToggle,
   onSelect,
+  onSelectSection,
   level = 0,
   parentTrail = [],
 }) {
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
   const nodeKey = node.value || node.label;
+  const sectionKey = [...parentTrail, node.label].join(' > ');
   const isExpanded = expandedNodes[nodeKey];
   const isSelected = node.value && selectedPage === node.value;
+  const isSectionSelected = !node.value && selectedSectionKey === sectionKey;
   const childCount = hasChildren ? node.children.length : 0;
   const topLevelLabel = getTopLevelLabel(node, parentTrail);
   const accentClass = getSectionAccentClass(topLevelLabel);
+  const disableExpand = level === 0 && node.label === 'Home';
+  const showChevron = hasChildren && !disableExpand;
+  const showChildren = hasChildren && isExpanded && !disableExpand;
 
   return (
     <li>
@@ -575,13 +582,8 @@ function SidebarNode({
           level === 0 ? 'bg-white/70 px-2 py-1.5 ring-1 ring-zinc-100' : 'px-1 py-0.5'
         }`}
         style={{ marginLeft: `${Math.max(0, level - 1) * 10}px` }}
-        onClick={() => {
-          if (hasChildren && !node.value) {
-            onToggle(nodeKey);
-          }
-        }}
       >
-        {hasChildren ? (
+        {showChevron ? (
           <button
             type="button"
             onClick={(event) => {
@@ -589,6 +591,8 @@ function SidebarNode({
               onToggle(nodeKey);
             }}
             className="grid h-5 w-5 place-items-center rounded-md border border-zinc-200 bg-white text-[11px] text-zinc-600 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+            title={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
             <span className={`inline-block transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
               ›
@@ -612,9 +616,16 @@ function SidebarNode({
             <span className="line-clamp-1">{node.label}</span>
           </button>
         ) : (
-          <div
-            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 ${accentClass}`}
-            title="Click to expand/collapse"
+          <button
+            type="button"
+            onClick={() => {
+              onSelectSection(node, parentTrail);
+              if (!disableExpand && !isExpanded) onToggle(nodeKey);
+            }}
+            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left transition ${accentClass} ${
+              isSectionSelected ? 'ring-2 ring-[#df3655]/40 shadow-sm' : 'hover:brightness-95'
+            }`}
+            title="Click to view all pages in this section"
           >
             <span className="text-sm font-semibold">{node.label}</span>
             {childCount > 0 ? (
@@ -622,20 +633,22 @@ function SidebarNode({
                 {childCount}
               </span>
             ) : null}
-          </div>
+          </button>
         )}
       </div>
 
-      {hasChildren && isExpanded ? (
+      {showChildren ? (
         <ul className="ml-2 mt-1 space-y-1 border-l border-zinc-200/80 pl-2">
           {node.children.map((child) => (
             <SidebarNode
               key={child.value || child.label}
               node={child}
               selectedPage={selectedPage}
+              selectedSectionKey={selectedSectionKey}
               expandedNodes={expandedNodes}
               onToggle={onToggle}
               onSelect={onSelect}
+              onSelectSection={onSelectSection}
               level={level + 1}
               parentTrail={[...parentTrail, node.label]}
             />
@@ -704,6 +717,8 @@ export default function HomePage() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
   const [selectedPage, setSelectedPage] = useState(getInitialSelectedPage);
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [sectionViewMode, setSectionViewMode] = useState('list');
   const [formData, setFormData] = useState(makeEmptySeo('/'));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -781,12 +796,44 @@ export default function HomePage() {
         .filter(Boolean),
     [dashboardStats.notUpdatedPageUrls, pageOptionByUrl]
   );
+  const selectedSectionKey = useMemo(() => {
+    if (!selectedSection) return '';
+    return [...(selectedSection.parentTrail || []), selectedSection.node.label].join(' > ');
+  }, [selectedSection]);
+  const sectionPages = useMemo(() => {
+    if (!selectedSection) return [];
+    return flattenPageTree([selectedSection.node], selectedSection.parentTrail || []);
+  }, [selectedSection]);
+  const updatedPageUrlSet = useMemo(
+    () => new Set(dashboardStats.updatedPageUrls || []),
+    [dashboardStats.updatedPageUrls]
+  );
+  const isSectionView = Boolean(selectedSection) && !isDashboardView;
+
   function handleToggleNode(nodeKey) {
     setExpandedNodes((prev) => ({ ...prev, [nodeKey]: !prev[nodeKey] }));
   }
 
+  function handleSelectPage(value) {
+    setSelectedPage(value);
+    setSelectedSection(null);
+  }
+
+  function handleSelectSection(node, parentTrail) {
+    setSelectedSection({ node, parentTrail: parentTrail || [] });
+    setSuccessMessage('');
+    setErrorMessage('');
+  }
+
+  function handleOpenDashboard() {
+    setSelectedPage(DASHBOARD_PAGE);
+    setSelectedSection(null);
+    setActiveDashboardList('all');
+  }
+
   function handleSelectFromSearch(item) {
     setSelectedPage(item.value);
+    setSelectedSection(null);
     setSearchText(item.value);
     setShowSearchResults(false);
   }
@@ -1101,6 +1148,7 @@ export default function HomePage() {
         setCurrentUser(authResponse.user || null);
         setIsAuthenticated(true);
         setSelectedPage(DASHBOARD_PAGE);
+        setSelectedSection(null);
         setActiveDashboardList('all');
         setAuthForm({ name: '', email: '', password: '', otp: '' });
         setOtpTimer(0);
@@ -1316,10 +1364,7 @@ export default function HomePage() {
               <li>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedPage(DASHBOARD_PAGE);
-                    setActiveDashboardList('all');
-                  }}
+                  onClick={handleOpenDashboard}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
                     isDashboardView
                       ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#df3655] ring-1 ring-[#df3655]/20'
@@ -1334,9 +1379,11 @@ export default function HomePage() {
                   key={node.value || node.label}
                   node={node}
                   selectedPage={selectedPage}
+                  selectedSectionKey={selectedSectionKey}
                   expandedNodes={expandedNodes}
                   onToggle={handleToggleNode}
-                  onSelect={setSelectedPage}
+                  onSelect={handleSelectPage}
+                  onSelectSection={handleSelectSection}
                   parentTrail={[]}
                 />
               ))}
@@ -1363,9 +1410,17 @@ export default function HomePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
                     <h1 className="mt-1 text-2xl font-bold text-zinc-900">SEO Admin Panel</h1>
                     <p className="mt-2 text-sm text-zinc-600">
-                      {isDashboardView ? 'Current view:' : 'Selected path:'}{' '}
+                      {isDashboardView
+                        ? 'Current view:'
+                        : isSectionView
+                          ? 'Section:'
+                          : 'Selected path:'}{' '}
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
-                        {isDashboardView ? 'Dashboard' : targetPageUrl}
+                        {isDashboardView
+                          ? 'Dashboard'
+                          : isSectionView
+                            ? [...(selectedSection.parentTrail || []), selectedSection.node.label].join(' › ')
+                            : targetPageUrl}
                       </span>
                     </p>
                   </div>
@@ -1521,7 +1576,7 @@ export default function HomePage() {
                                   <td className="border-b border-zinc-100 px-3 py-2 text-sm text-zinc-800">
                                     <button
                                       type="button"
-                                      onClick={() => setSelectedPage(item.value)}
+                                      onClick={() => handleSelectPage(item.value)}
                                       className="text-left font-medium text-[#1c7fbe] hover:underline"
                                     >
                                       {item.label}
@@ -1530,7 +1585,7 @@ export default function HomePage() {
                                   <td className="border-b border-zinc-100 px-3 py-2 text-xs text-zinc-600">
                                     <button
                                       type="button"
-                                      onClick={() => setSelectedPage(item.value)}
+                                      onClick={() => handleSelectPage(item.value)}
                                       className="text-left text-zinc-700 hover:text-[#1c7fbe] hover:underline"
                                     >
                                       {item.value}
@@ -1543,6 +1598,267 @@ export default function HomePage() {
                         </div>
                       </div>
                     ) : null}
+                  </div>
+                ) : isSectionView ? (
+                  <div className="space-y-5">
+                    <div className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-zinc-200 bg-gradient-to-r from-white via-white to-[#fff3f6] p-4 shadow-sm">
+                      <div className="min-w-0">
+                        {(selectedSection.parentTrail || []).length > 0 ? (
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                            {(selectedSection.parentTrail || []).join(' › ')}
+                          </p>
+                        ) : null}
+                        <h2 className="mt-1 text-2xl font-bold text-zinc-900">{selectedSection.node.label}</h2>
+                        <p className="mt-1 text-sm text-zinc-600">
+                          {sectionPages.length} {sectionPages.length === 1 ? 'page' : 'pages'} available. Click the
+                          edit icon on any row to manage its SEO.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div
+                          className="inline-flex items-center rounded-xl border border-zinc-200 bg-white p-1 shadow-sm"
+                          role="tablist"
+                          aria-label="Toggle view"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSectionViewMode('list')}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                              sectionViewMode === 'list'
+                                ? 'bg-[#df3655] text-white shadow-sm'
+                                : 'text-zinc-600 hover:bg-zinc-100'
+                            }`}
+                            title="List view"
+                            aria-pressed={sectionViewMode === 'list'}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <line x1="8" y1="6" x2="21" y2="6" />
+                              <line x1="8" y1="12" x2="21" y2="12" />
+                              <line x1="8" y1="18" x2="21" y2="18" />
+                              <line x1="3" y1="6" x2="3.01" y2="6" />
+                              <line x1="3" y1="12" x2="3.01" y2="12" />
+                              <line x1="3" y1="18" x2="3.01" y2="18" />
+                            </svg>
+                            List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSectionViewMode('grid')}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                              sectionViewMode === 'grid'
+                                ? 'bg-[#df3655] text-white shadow-sm'
+                                : 'text-zinc-600 hover:bg-zinc-100'
+                            }`}
+                            title="Grid view"
+                            aria-pressed={sectionViewMode === 'grid'}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <rect x="3" y="3" width="7" height="7" />
+                              <rect x="14" y="3" width="7" height="7" />
+                              <rect x="14" y="14" width="7" height="7" />
+                              <rect x="3" y="14" width="7" height="7" />
+                            </svg>
+                            Grid
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleOpenDashboard}
+                          className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                        >
+                          ← Back to Dashboard
+                        </button>
+                      </div>
+                    </div>
+
+                    {sectionPages.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
+                        <p className="text-sm text-zinc-500">No pages found in this section.</p>
+                      </div>
+                    ) : sectionViewMode === 'list' ? (
+                      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                        <div className="max-h-[60vh] overflow-auto">
+                          <table className="w-full border-collapse">
+                            <thead className="sticky top-0 z-10 bg-zinc-50">
+                              <tr>
+                                <th className="w-14 border-b border-zinc-200 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  S.No
+                                </th>
+                                <th className="border-b border-zinc-200 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  Page Name
+                                </th>
+                                <th className="border-b border-zinc-200 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  Page URL
+                                </th>
+                                <th className="w-32 border-b border-zinc-200 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  Status
+                                </th>
+                                <th className="w-20 border-b border-zinc-200 px-3 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  Action
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sectionPages.map((item, index) => {
+                                const isUpdated = updatedPageUrlSet.has(item.value);
+                                return (
+                                  <tr
+                                    key={`${item.value}-${item.pathTrail}`}
+                                    className="border-b border-zinc-100 transition odd:bg-white even:bg-zinc-50/40 hover:bg-[#fff3f6]/60"
+                                  >
+                                    <td className="px-3 py-2.5 text-sm font-semibold text-zinc-500">
+                                      {index + 1}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-sm font-semibold text-zinc-900">
+                                      <span className="line-clamp-1" title={item.label}>
+                                        {item.label}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2.5 text-xs text-zinc-600">
+                                      <span className="line-clamp-1 break-all" title={item.value}>
+                                        {item.value}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2.5">
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                          isUpdated
+                                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                            : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                                        }`}
+                                      >
+                                        <span
+                                          className={`inline-block h-1.5 w-1.5 rounded-full ${
+                                            isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
+                                          }`}
+                                          aria-hidden="true"
+                                        />
+                                        {isUpdated ? 'Updated' : 'Pending'}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2.5 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSelectPage(item.value)}
+                                        className="inline-grid h-8 w-8 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#df3655]/30 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                        title={`Edit SEO for ${item.label}`}
+                                        aria-label={`Edit SEO for ${item.label}`}
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="14"
+                                          height="14"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {sectionPages.map((item, index) => {
+                          const isUpdated = updatedPageUrlSet.has(item.value);
+                          return (
+                            <div
+                              key={`${item.value}-${item.pathTrail}`}
+                              className="group flex items-start justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#2EA6F7]/40 hover:shadow-md"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-zinc-100 text-[10px] font-bold text-zinc-600">
+                                    {index + 1}
+                                  </span>
+                                  <span
+                                    className={`inline-flex h-2 w-2 shrink-0 rounded-full ${
+                                      isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                  <p
+                                    className="line-clamp-1 text-sm font-semibold text-zinc-900"
+                                    title={item.label}
+                                  >
+                                    {item.label}
+                                  </p>
+                                </div>
+                                <p
+                                  className="mt-1 line-clamp-1 break-all text-xs text-zinc-500"
+                                  title={item.value}
+                                >
+                                  {item.value}
+                                </p>
+                                <span
+                                  className={`mt-3 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                    isUpdated
+                                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                      : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                                  }`}
+                                >
+                                  {isUpdated ? 'SEO Updated' : 'SEO Pending'}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectPage(item.value)}
+                                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-[#df3655]/30 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                title={`Edit SEO for ${item.label}`}
+                                aria-label={`Edit SEO for ${item.label}`}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ) : loading ? (
                   <p className="text-sm text-zinc-600">Loading SEO data...</p>
