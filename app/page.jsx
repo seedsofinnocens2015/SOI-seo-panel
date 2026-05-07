@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import { FaCircle } from 'react-icons/fa';
+import { HiChevronRight, HiPencilSquare, HiXMark } from 'react-icons/hi2';
 import SeoForm from './components/SeoForm';
 import { fetchSeo, fetchSeoStats, saveSeo } from '../lib/seoApi';
 import {
@@ -15,322 +17,267 @@ import {
   verifySignupOtp,
 } from '../lib/authApi';
 
+/** Sidebar opens the Home hub (table); real URLs are listed in HOME_SECTION_PAGES. */
+const HOME_HUB_PAGE = '__seo_home_hub__';
+
+const HOME_SECTION_PAGES = [
+  { label: 'Home page', value: '/' },
+  { label: 'female-faqs', value: '/female-faqs' },
+  { label: 'genetic-faqs', value: '/genetic-faqs' },
+  { label: 'learning-faqs', value: '/learning-faqs' },
+  { label: 'male-faqs', value: '/male-faqs' },
+];
+
+/** Sidebar hub — table lives in INTERNATIONAL_PATIENTS_SECTION_PAGES. */
+const INTERNATIONAL_PATIENTS_HUB_PAGE = '__seo_international_patients_hub__';
+
+const INTERNATIONAL_PATIENTS_SECTION_PAGES = [
+  { label: 'Patient Concierge', value: '/international-patients/patient-concierge' },
+  { label: 'Travel Support', value: '/international-patients/travel-support' },
+  { label: 'International Pricing', value: '/international-patients/international-pricing' },
+  { label: 'Contact Team', value: '/international-patients/contact-team' },
+];
+
+const RESOURCES_HUB_PAGE = '__seo_resources_hub__';
+
+const RESOURCES_SECTION_PAGES = [
+  { label: 'IVF Process / Patient Journey', value: '/resources/ivf-process-patient-journey' },
+  { label: 'FAQs', value: '/resources/faqs' },
+  { label: 'Patient Testimonial Videos', value: '/resources/patient-testimonial-videos' },
+  { label: 'Fertility Calculator', value: '/resources/fertility-calculator' },
+];
+
+const ABOUT_US_HUB_PAGE = '__seo_about_us_hub__';
+
+const ABOUT_US_SECTION_PAGES = [
+  { label: 'Our Story', value: '/about/our-story' },
+  { label: 'Dr. Gauri Agrawal – Founder', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist/' },
+  { label: 'Leadership Team', value: '/about/leadership-team' },
+  { label: 'Vision, Mission & Values', value: '/about/vision-mission-values' },
+  { label: 'Success Rates', value: '/about/success-rates' },
+  { label: 'Embryology Lab & Technology', value: '/about/embryology-lab-technology' },
+  { label: 'Media & Press', value: '/about/media-press' },
+  { label: 'Awards & Accreditations', value: '/about/awards-accreditations' },
+];
+
+const CONTACT_US_HUB_PAGE = '__seo_contact_us_hub__';
+
+const CONTACT_US_SECTION_PAGES = [
+  { label: 'Book Appointment', value: '/contact/book-appointment' },
+  { label: 'Online Payment', value: '/contact/online-payment' },
+  { label: 'WhatsApp', value: '/contact/whatsapp' },
+  { label: 'Call Back Form', value: '/contact/call-back-form' },
+  { label: 'Centre Locator', value: '/contact/centre-locator' },
+  { label: 'Careers', value: '/contact/careers' },
+  { label: 'Feedback', value: '/contact/feedback' },
+];
+
+const TRAINING_ACADEMY_HUB_PAGE = '__seo_training_academy_hub__';
+
+const TRAINING_ACADEMY_SECTION_PAGES = [
+  { label: 'Training Programs Academy', value: '/training-academy' },
+  {
+    label: 'Andrology Technician Training Program',
+    value: '/training-academy/andrology-technician-training-program',
+  },
+  { label: 'Embryo Biopsy Training Program', value: '/training-academy/embryo-biopsy-training-program' },
+  { label: 'Embryologist Training Program', value: '/training-academy/embryologist-training-program' },
+  {
+    label: 'Gynecologic Surgical Training Program',
+    value: '/training-academy/gynecologic-surgical-training-program',
+  },
+  { label: 'Training Registration', value: '/training-academy/training-registration' },
+];
+
+const IVF_CENTRES_HUB_PAGE = '__seo_ivf_centres_hub__';
+
+/** All IVF centre location pages (flat list; same order as previous tree: India regions, then international). */
+const IVF_CENTRES_SECTION_PAGES = [
+  { label: 'Delhi — Overview', value: '/best-ivf-centre-in-delhi' },
+  { label: 'Delhi — Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
+  { label: 'Delhi — Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
+  { label: 'Delhi — Janakpuri, New Delhi', value: '/delhi/best-ivf-centre-in-janakpuri/' },
+  { label: 'Uttar Pradesh — Overview', value: '/best-ivf-centre-in-uttar-pradesh' },
+  { label: 'Uttar Pradesh — Ghaziabad', value: '/uttar-pradesh/best-ivf-centre-in-ghaziabad/' },
+  { label: 'Uttar Pradesh — Lucknow', value: '/uttar-pradesh/best-ivf-centre-in-lucknow/' },
+  { label: 'Uttar Pradesh — Agra', value: '/uttar-pradesh/best-ivf-centre-in-agra/' },
+  { label: 'Uttar Pradesh — Gorakhpur', value: '/uttar-pradesh/best-ivf-centre-in-gorakhpur/' },
+  { label: 'Uttar Pradesh — Kanpur', value: '/uttar-pradesh/best-ivf-centre-in-kanpur/' },
+  { label: 'Uttar Pradesh — Meerut', value: '/uttar-pradesh/best-ivf-centre-in-meerut/' },
+  { label: 'Bihar — Overview', value: '/best-ivf-centre-in-bihar' },
+  { label: 'Bihar — Patna', value: '/bihar/best-ivf-centre-in-patna/' },
+  { label: 'Bihar — Muzaffarpur', value: '/bihar/best-ivf-centre-in-muzaffarpur/' },
+  { label: 'Haryana — Overview', value: '/best-ivf-centre-in-haryana' },
+  { label: 'Haryana — Faridabad', value: '/haryana/best-ivf-centre-in-faridabad/' },
+  { label: 'Haryana — Gurugram', value: '/haryana/best-ivf-centre-in-gurugram/' },
+  { label: 'Jharkhand — Overview', value: '/best-ivf-centre-in-jharkhand' },
+  { label: 'Jharkhand — Ranchi', value: '/jharkhand/best-ivf-centre-in-ranchi/' },
+  { label: 'Uttarakhand — Overview', value: '/best-ivf-centre-in-uttarakhand' },
+  { label: 'Uttarakhand — Haldwani', value: '/uttarakhand/best-ivf-centre-in-haldwani/' },
+  { label: 'Assam — Overview', value: '/best-ivf-centre-in-assam' },
+  { label: 'Assam — Guwahati', value: '/assam/best-ivf-centre-in-guwahati/' },
+  { label: 'Kerala — Overview', value: '/best-ivf-centre-in-kerala' },
+  { label: 'Kerala — Kasaragod', value: '/kerala/best-ivf-centre-in-kasaragod/' },
+  { label: 'Kerala — Kochi', value: '/kerala/best-ivf-centre-in-kochi/' },
+  { label: 'Jammu & Kashmir — Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
+  { label: 'Jammu & Kashmir — Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
+  { label: 'West Bengal — Overview', value: '/best-ivf-centre-in-west-bengal' },
+  { label: 'West Bengal — Kolkata', value: '/west-bengal/best-ivf-centre-in-kolkata/' },
+  { label: 'International — Overview', value: '/ivf-centres/international' },
+  { label: 'International — Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
+];
+
+const INFERTILITY_TREATMENT_HUB_PAGE = '__seo_infertility_treatment_hub__';
+
+const INFERTILITY_TREATMENT_SECTION_PAGES = [
+  { label: 'Fertility Treatments — IVF', value: '/fertility-treatments/ivf' },
+  { label: 'Fertility Treatments — ICSI', value: '/fertility-treatments/icsi' },
+  { label: 'Fertility Treatments — IUI', value: '/fertility-treatments/iui' },
+  { label: 'Fertility Treatments — Monitoring in an IUI Cycle', value: '/fertility-treatments/monitoring-in-an-iui-cycle-steps' },
+  { label: 'Fertility Treatments — Ovulation Induction', value: '/fertility-treatments/ovulation-induction' },
+  { label: 'Fertility Treatments — Follicular Monitoring', value: '/fertility-treatments/follicular-monitoring' },
+  { label: 'Fertility Treatments — Blastocyst Transfer', value: '/fertility-treatments/blastocyst-transfer' },
+  { label: 'Fertility Treatments — Secondary Infertility', value: '/fertility-treatments/secondary-infertility' },
+  { label: 'IVF Procedures & Preservation — Egg Freezing', value: '/ivf-procedures-preservation/egg-freezing' },
+  { label: 'IVF Procedures & Preservation — Embryo Freezing', value: '/ivf-procedures-preservation/embryo-freezing' },
+  { label: 'IVF Procedures & Preservation — Cryopreservation', value: '/ivf-procedures-preservation/cryopreservation' },
+  { label: 'IVF Procedures & Preservation — PRP & Ovarian Rejuvenation', value: '/ivf-procedures-preservation/prp' },
+  { label: 'IVF Procedures & Preservation — Surrogacy', value: '/ivf-procedures-preservation/surrogacy' },
+  { label: 'IVF Procedures & Preservation — Donor Program', value: '/ivf-procedures-preservation/donor-program' },
+  { label: 'Male Infertility Treatments — Male Infertility', value: '/male-infertility-treatments/male-infertility-treatment-in-india' },
+  { label: 'Male Infertility Treatments — TESA / PESA', value: '/male-infertility-treatments/tesa-pesa' },
+  { label: 'Male Infertility Treatments — MicroTESE', value: '/male-infertility-treatments/microtese' },
+  { label: 'Male Infertility Treatments — Semen Analysis', value: '/male-infertility-treatments/semen-analysis' },
+  { label: 'Male Infertility Treatments — Semen Analysis at Home', value: '/male-infertility-treatments/semen-analysis-at-home' },
+  { label: 'Male Infertility Treatments — Varicocele', value: '/male-infertility-treatments/varicocele' },
+  { label: 'Male Infertility Treatments — Vasectomy Reversal', value: '/male-infertility-treatments/vasectomy-reversal' },
+  { label: 'Male Fertility Conditions — Azoospermia', value: '/male-fertility-conditions/azoospermia' },
+  { label: 'Male Fertility Conditions — Non-Obstructive Azoospermia', value: '/male-fertility-conditions/non-obstructive-azoospermia' },
+  { label: 'Male Fertility Conditions — Obstructive Azoospermia', value: '/male-fertility-conditions/obstructive-azoospermia' },
+  { label: 'Male Fertility Conditions — Oligospermia', value: '/male-fertility-conditions/oligospermia' },
+  { label: 'Male Fertility Conditions — Blocked Seminiferous Tubules', value: '/male-fertility-conditions/blocked-seminiferous-tubules' },
+  { label: 'Male Fertility Conditions — Endocrinological Disorder in Men', value: '/male-fertility-conditions/endocrinological-disorder-in-men' },
+  { label: 'Male Fertility Conditions — Retrograde Ejaculation', value: '/male-fertility-conditions/retrograde-ejaculation' },
+  { label: 'Genetic Testing & Screening — Genetic Testing', value: '/genetic-testing-screening/genetic-testing' },
+  { label: 'Genetic Testing & Screening — Genetic Factors', value: '/genetic-testing-screening/genetic-factors' },
+  { label: 'Genetic Testing & Screening — PGT-A', value: '/genetic-testing-screening/pgt-a' },
+  { label: 'Genetic Testing & Screening — PGT-M', value: '/genetic-testing-screening/pgt-m' },
+  { label: 'Genetic Testing & Screening — PGT-SR', value: '/genetic-testing-screening/pgt-sr' },
+  { label: 'Genetic Testing & Screening — Difference between PGT A & PGT-M', value: '/genetic-testing-screening/difference-between-pgt-a-and-pgt-m' },
+  { label: 'Genetic Testing & Screening — Amniocentesis', value: '/genetic-testing-screening/amniocentesis' },
+  { label: 'Genetic Testing & Screening — Chorionic Villus Sampling (CVS)', value: '/genetic-testing-screening/chorionic-villus-sampling-cvs' },
+  { label: 'Genetic Testing & Screening — Couple Carrier Screening', value: '/genetic-testing-screening/couple-carrier-screening' },
+  { label: 'Genetic Testing & Screening — Karyotyping', value: '/genetic-testing-screening/karyotyping' },
+  { label: 'Genetic Testing & Screening — Microarray', value: '/genetic-testing-screening/microarray' },
+  { label: 'Genetic Testing & Screening — HLA Matching', value: '/genetic-testing-screening/hla-matching' },
+  { label: 'Maternal–Fetal Medicine (MFM) — High-Risk Pregnancy', value: '/maternal-fetal-medicine/high-risk-pregnancy' },
+  { label: 'Maternal–Fetal Medicine (MFM) — Fetal Reduction', value: '/maternal-fetal-medicine/fetal-reduction' },
+  { label: 'Maternal–Fetal Medicine (MFM) — MFM Scans & Diagnostics', value: '/maternal-fetal-medicine/maternal-and-fetal-medicine' },
+  { label: 'Surgeries — Hysteroscopy', value: '/surgeries/hysteroscopy' },
+  { label: 'Surgeries — Laparoscopy', value: '/surgeries/laparoscopy' },
+  { label: 'Surgeries — Open Surgery', value: '/surgeries/open-surgery' },
+  { label: 'Reproductive Health Conditions — Blocked Fallopian Tubes', value: '/reproductive-health-conditions/blocked-fallopian-tubes' },
+  { label: 'Reproductive Health Conditions — PCOS (Polycystic Ovarian Syndrome)', value: '/reproductive-health-conditions/pcos-polycystic-ovarian-syndrome' },
+  { label: 'Reproductive Health Conditions — Irregular Menstrual Cycle', value: '/reproductive-health-conditions/irregular-menstrual-cycle' },
+  { label: 'Reproductive Health Conditions — Diabetes, Thyroid and Obesity', value: '/reproductive-health-conditions/diabetes-thyroid-and-obesity' },
+  { label: 'Reproductive Health Conditions — Endometrial and Ovarian', value: '/reproductive-health-conditions/endometrial-and-ovarian' },
+  { label: 'Reproductive Health Conditions — Endometriosis', value: '/reproductive-health-conditions/endometriosis' },
+  { label: 'Reproductive Health Conditions — Fibroids, Polyps and Adenomyosis', value: '/reproductive-health-conditions/fibroids-polyps-and-adenomyosis' },
+  { label: 'Reproductive Health Conditions — Tuberculosis', value: '/reproductive-health-conditions/tuberculosis' },
+  { label: 'Reproductive Health Conditions — Recurrent Miscarriages', value: '/reproductive-health-conditions/recurrent-miscarriages' },
+  { label: 'Reproductive Health Conditions — Why Delayed Periods But Not Pregnant', value: '/reproductive-health-conditions/reasons-for-delayed-periods-but-not-pregnant' },
+  { label: 'Reproductive Health Conditions — What is Ovarian Hyperstimulation', value: '/reproductive-health-conditions/what-is-ovarian-hyperstimulation' },
+  { label: 'Fertility Wellness — Boost Fertility With Colours Of Food', value: '/fertility-wellness/how-to-boost-up-fertility-with-the-colours-of-food' },
+  { label: 'Fertility Wellness — Yoga and Fertility', value: '/fertility-wellness/yoga-and-fertility-heres-how-yoga-can-support-fertility' },
+];
+
+const SEO_HUB_PAGE_IDS = new Set([
+  HOME_HUB_PAGE,
+  INFERTILITY_TREATMENT_HUB_PAGE,
+  INTERNATIONAL_PATIENTS_HUB_PAGE,
+  IVF_CENTRES_HUB_PAGE,
+  RESOURCES_HUB_PAGE,
+  ABOUT_US_HUB_PAGE,
+  CONTACT_US_HUB_PAGE,
+  TRAINING_ACADEMY_HUB_PAGE,
+]);
+
+/** Maps hub sentinel → hub table UI (title, pages, theme, sidebar tip label). */
+const SECTION_HUB_UI = {
+  [HOME_HUB_PAGE]: {
+    title: 'Home',
+    pages: HOME_SECTION_PAGES,
+    theme: 'emerald',
+    tipSidebarLabel: 'Home',
+  },
+  [INTERNATIONAL_PATIENTS_HUB_PAGE]: {
+    title: 'International Patients',
+    pages: INTERNATIONAL_PATIENTS_SECTION_PAGES,
+    theme: 'cyan',
+    tipSidebarLabel: 'International Patients',
+  },
+  [IVF_CENTRES_HUB_PAGE]: {
+    title: 'IVF Centres',
+    pages: IVF_CENTRES_SECTION_PAGES,
+    theme: 'indigo',
+    tipSidebarLabel: 'IVF Centres',
+  },
+  [INFERTILITY_TREATMENT_HUB_PAGE]: {
+    title: 'Infertility Treatment',
+    pages: INFERTILITY_TREATMENT_SECTION_PAGES,
+    theme: 'rose',
+    tipSidebarLabel: 'Infertility Treatment',
+  },
+  [RESOURCES_HUB_PAGE]: {
+    title: 'Resources',
+    pages: RESOURCES_SECTION_PAGES,
+    theme: 'amber',
+    tipSidebarLabel: 'Resources',
+  },
+  [ABOUT_US_HUB_PAGE]: {
+    title: 'About Us',
+    pages: ABOUT_US_SECTION_PAGES,
+    theme: 'violet',
+    tipSidebarLabel: 'About Us',
+  },
+  [CONTACT_US_HUB_PAGE]: {
+    title: 'Contact Us',
+    pages: CONTACT_US_SECTION_PAGES,
+    theme: 'orange',
+    tipSidebarLabel: 'Contact Us',
+  },
+  [TRAINING_ACADEMY_HUB_PAGE]: {
+    title: 'Training Academy',
+    pages: TRAINING_ACADEMY_SECTION_PAGES,
+    theme: 'teal',
+    tipSidebarLabel: 'Training Academy',
+  },
+};
+
 const PAGE_TREE = [
   {
     label: 'Home',
-    children: [
-      { label: 'Home Page', value: '/' },
-
-      {
-        label: 'Home FAQs',
-        children: [
-          { label: 'Female FAQs', value: '/female-faqs' },
-          { label: 'Genetic FAQs', value: '/genetic-faqs' },
-          { label: 'Learning FAQs', value: '/learning-faqs' },
-          { label: 'Male FAQs', value: '/male-faqs' },
-        ],
-      },
-    ],
+    value: HOME_HUB_PAGE,
   },
   {
     label: 'Infertility Treatment',
-    children: [
-      {
-        label: 'Fertility Treatments',
-        children: [
-          { label: 'IVF', value: '/fertility-treatments/ivf' },
-          { label: 'ICSI', value: '/fertility-treatments/icsi' },
-          { label: 'IUI', value: '/fertility-treatments/iui' },
-          {
-            label: 'Monitoring in an IUI Cycle',
-            value: '/fertility-treatments/monitoring-in-an-iui-cycle-steps',
-          },
-          { label: 'Ovulation Induction', value: '/fertility-treatments/ovulation-induction' },
-          { label: 'Follicular Monitoring', value: '/fertility-treatments/follicular-monitoring' },
-          { label: 'Blastocyst Transfer', value: '/fertility-treatments/blastocyst-transfer' },
-          { label: 'Secondary Infertility', value: '/fertility-treatments/secondary-infertility' },
-        ],
-      },
-      {
-        label: 'IVF Procedures & Preservation',
-        children: [
-          { label: 'Egg Freezing', value: '/ivf-procedures-preservation/egg-freezing' },
-          { label: 'Embryo Freezing', value: '/ivf-procedures-preservation/embryo-freezing' },
-          { label: 'Cryopreservation', value: '/ivf-procedures-preservation/cryopreservation' },
-          { label: 'PRP & Ovarian Rejuvenation', value: '/ivf-procedures-preservation/prp' },
-          { label: 'Surrogacy', value: '/ivf-procedures-preservation/surrogacy' },
-          { label: 'Donor Program', value: '/ivf-procedures-preservation/donor-program' },
-        ],
-      },
-      {
-        label: 'Male Infertility Treatments',
-        children: [
-          {
-            label: 'Male Infertility',
-            value: '/male-infertility-treatments/male-infertility-treatment-in-india',
-          },
-          { label: 'TESA / PESA', value: '/male-infertility-treatments/tesa-pesa' },
-          { label: 'MicroTESE', value: '/male-infertility-treatments/microtese' },
-          { label: 'Semen Analysis', value: '/male-infertility-treatments/semen-analysis' },
-          { label: 'Semen Analysis at Home', value: '/male-infertility-treatments/semen-analysis-at-home' },
-          { label: 'Varicocele', value: '/male-infertility-treatments/varicocele' },
-          { label: 'Vasectomy Reversal', value: '/male-infertility-treatments/vasectomy-reversal' },
-        ],
-      },
-      {
-        label: 'Male Fertility Conditions',
-        children: [
-          { label: 'Azoospermia', value: '/male-fertility-conditions/azoospermia' },
-          {
-            label: 'Non-Obstructive Azoospermia',
-            value: '/male-fertility-conditions/non-obstructive-azoospermia',
-          },
-          {
-            label: 'Obstructive Azoospermia',
-            value: '/male-fertility-conditions/obstructive-azoospermia',
-          },
-          { label: 'Oligospermia', value: '/male-fertility-conditions/oligospermia' },
-          {
-            label: 'Blocked Seminiferous Tubules',
-            value: '/male-fertility-conditions/blocked-seminiferous-tubules',
-          },
-          {
-            label: 'Endocrinological Disorder in Men',
-            value: '/male-fertility-conditions/endocrinological-disorder-in-men',
-          },
-          {
-            label: 'Retrograde Ejaculation',
-            value: '/male-fertility-conditions/retrograde-ejaculation',
-          },
-        ],
-      },
-      {
-        label: 'Genetic Testing & Screening',
-        children: [
-          { label: 'Genetic Testing', value: '/genetic-testing-screening/genetic-testing' },
-          { label: 'Genetic Factors', value: '/genetic-testing-screening/genetic-factors' },
-          { label: 'PGT-A', value: '/genetic-testing-screening/pgt-a' },
-          { label: 'PGT-M', value: '/genetic-testing-screening/pgt-m' },
-          { label: 'PGT-SR', value: '/genetic-testing-screening/pgt-sr' },
-          {
-            label: 'Difference between PGT A & PGT-M',
-            value: '/genetic-testing-screening/difference-between-pgt-a-and-pgt-m',
-          },
-          { label: 'Amniocentesis', value: '/genetic-testing-screening/amniocentesis' },
-          {
-            label: 'Chorionic Villus Sampling (CVS)',
-            value: '/genetic-testing-screening/chorionic-villus-sampling-cvs',
-          },
-          {
-            label: 'Couple Carrier Screening',
-            value: '/genetic-testing-screening/couple-carrier-screening',
-          },
-          { label: 'Karyotyping', value: '/genetic-testing-screening/karyotyping' },
-          { label: 'Microarray', value: '/genetic-testing-screening/microarray' },
-          { label: 'HLA Matching', value: '/genetic-testing-screening/hla-matching' },
-        ],
-      },
-      {
-        label: 'Maternal–Fetal Medicine (MFM)',
-        children: [
-          { label: 'High-Risk Pregnancy', value: '/maternal-fetal-medicine/high-risk-pregnancy' },
-          { label: 'Fetal Reduction', value: '/maternal-fetal-medicine/fetal-reduction' },
-          {
-            label: 'MFM Scans & Diagnostics',
-            value: '/maternal-fetal-medicine/maternal-and-fetal-medicine',
-          },
-        ],
-      },
-      {
-        label: 'Surgeries',
-        children: [
-          { label: 'Hysteroscopy', value: '/surgeries/hysteroscopy' },
-          { label: 'Laparoscopy', value: '/surgeries/laparoscopy' },
-          { label: 'Open Surgery', value: '/surgeries/open-surgery' },
-        ],
-      },
-      {
-        label: 'Reproductive Health Conditions',
-        children: [
-          {
-            label: 'Blocked Fallopian Tubes',
-            value: '/reproductive-health-conditions/blocked-fallopian-tubes',
-          },
-          {
-            label: 'PCOS (Polycystic Ovarian Syndrome)',
-            value: '/reproductive-health-conditions/pcos-polycystic-ovarian-syndrome',
-          },
-          {
-            label: 'Irregular Menstrual Cycle',
-            value: '/reproductive-health-conditions/irregular-menstrual-cycle',
-          },
-          {
-            label: 'Diabetes, Thyroid and Obesity',
-            value: '/reproductive-health-conditions/diabetes-thyroid-and-obesity',
-          },
-          { label: 'Endometrial and Ovarian', value: '/reproductive-health-conditions/endometrial-and-ovarian' },
-          { label: 'Endometriosis', value: '/reproductive-health-conditions/endometriosis' },
-          {
-            label: 'Fibroids, Polyps and Adenomyosis',
-            value: '/reproductive-health-conditions/fibroids-polyps-and-adenomyosis',
-          },
-          { label: 'Tuberculosis', value: '/reproductive-health-conditions/tuberculosis' },
-          {
-            label: 'Recurrent Miscarriages',
-            value: '/reproductive-health-conditions/recurrent-miscarriages',
-          },
-          {
-            label: 'Why Delayed Periods But Not Pregnant',
-            value: '/reproductive-health-conditions/reasons-for-delayed-periods-but-not-pregnant',
-          },
-          {
-            label: 'What is Ovarian Hyperstimulation',
-            value: '/reproductive-health-conditions/what-is-ovarian-hyperstimulation',
-          },
-        ],
-      },
-      {
-        label: 'Fertility Wellness',
-        children: [
-          {
-            label: 'Boost Fertility With Colours Of Food',
-            value: '/fertility-wellness/how-to-boost-up-fertility-with-the-colours-of-food',
-          },
-          {
-            label: 'Yoga and Fertility',
-            value: '/fertility-wellness/yoga-and-fertility-heres-how-yoga-can-support-fertility',
-          },
-        ],
-      },
-    ],
+    value: INFERTILITY_TREATMENT_HUB_PAGE,
   },
   {
     label: 'IVF Centres',
-    children: [
-      {
-        label: 'India',
-        children: [
-      {
-        label: 'Delhi',
-        children: [
-          { label: 'Delhi Overview', value: '/best-ivf-centre-in-delhi' },
-          { label: 'Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
-          { label: 'Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
-          { label: 'Janakpuri, New Delhi', value: '/delhi/best-ivf-centre-in-janakpuri/' },
-        ],
-      },
-      {
-        label: 'Uttar Pradesh',
-        children: [
-          { label: 'Uttar Pradesh Overview', value: '/best-ivf-centre-in-uttar-pradesh' },
-          { label: 'Ghaziabad', value: '/uttar-pradesh/best-ivf-centre-in-ghaziabad/' },
-          { label: 'Lucknow', value: '/uttar-pradesh/best-ivf-centre-in-lucknow/' },
-          { label: 'Agra', value: '/uttar-pradesh/best-ivf-centre-in-agra/' },
-          { label: 'Gorakhpur', value: '/uttar-pradesh/best-ivf-centre-in-gorakhpur/' },
-          { label: 'Kanpur', value: '/uttar-pradesh/best-ivf-centre-in-kanpur/' },
-          { label: 'Meerut', value: '/uttar-pradesh/best-ivf-centre-in-meerut/' },
-        ],
-      },
-      {
-        label: 'Bihar',
-        children: [
-          { label: 'Bihar Overview', value: '/best-ivf-centre-in-bihar' },
-          { label: 'Patna', value: '/bihar/best-ivf-centre-in-patna/' },
-          { label: 'Muzaffarpur', value: '/bihar/best-ivf-centre-in-muzaffarpur/' },
-        ],
-      },
-      {
-        label: 'Haryana',
-        children: [
-          { label: 'Haryana Overview', value: '/best-ivf-centre-in-haryana' },
-          { label: 'Faridabad', value: '/haryana/best-ivf-centre-in-faridabad/' },
-          { label: 'Gurugram', value: '/haryana/best-ivf-centre-in-gurugram/' },
-        ],
-      },
-      {
-        label: 'Jharkhand',
-        children: [
-          { label: 'Jharkhand Overview', value: '/best-ivf-centre-in-jharkhand' },
-          { label: 'Ranchi', value: '/jharkhand/best-ivf-centre-in-ranchi/' },
-        ],
-      },
-      {
-        label: 'Uttarakhand',
-        children: [
-          { label: 'Uttarakhand Overview', value: '/best-ivf-centre-in-uttarakhand' },
-          { label: 'Haldwani', value: '/uttarakhand/best-ivf-centre-in-haldwani/' },
-        ],
-      },
-      {
-        label: 'Assam',
-        children: [
-          { label: 'Assam Overview', value: '/best-ivf-centre-in-assam' },
-          { label: 'Guwahati', value: '/assam/best-ivf-centre-in-guwahati/' },
-        ],
-      },
-      {
-        label: 'Kerala',
-        children: [
-          { label: 'Kerala Overview', value: '/best-ivf-centre-in-kerala' },
-          { label: 'Kasaragod', value: '/kerala/best-ivf-centre-in-kasaragod/' },
-          { label: 'Kochi', value: '/kerala/best-ivf-centre-in-kochi/' },
-        ],
-      },
-      {
-        label: 'Jammu & Kashmir',
-        children: [
-          { label: 'J&K Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
-          { label: 'Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
-        ],
-      },
-      {
-        label: 'West Bengal',
-        children: [
-          { label: 'West Bengal Overview', value: '/best-ivf-centre-in-west-bengal' },
-          { label: 'Kolkata', value: '/west-bengal/best-ivf-centre-in-kolkata/' },
-        ],
-      },
-      {
-        label: 'International',
-        children: [
-          { label: 'International Overview', value: '/ivf-centres/international' },
-          { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
-        ],
-      },
-        ],
-      },
-    ],
+    value: IVF_CENTRES_HUB_PAGE,
   },
   {
     label: 'International Patients',
-    children: [
-      { label: 'Patient Concierge', value: '/international-patients/patient-concierge' },
-      { label: 'Travel Support', value: '/international-patients/travel-support' },
-      { label: 'International Pricing', value: '/international-patients/international-pricing' },
-      { label: 'Contact Team', value: '/international-patients/contact-team' },
-    ],
+    value: INTERNATIONAL_PATIENTS_HUB_PAGE,
   },
   {
     label: 'Resources',
-    children: [
-      { label: 'IVF Process / Patient Journey', value: '/resources/ivf-process-patient-journey' },
-      { label: 'FAQs', value: '/resources/faqs' },
-      { label: 'Patient Testimonial Videos', value: '/resources/patient-testimonial-videos' },
-      { label: 'Fertility Calculator', value: '/resources/fertility-calculator' },
-    ],
+    value: RESOURCES_HUB_PAGE,
   },
   {
     label: 'About Us',
-    children: [
-      { label: 'Our Story', value: '/about/our-story' },
-      { label: 'Dr. Gauri Agrawal – Founder', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist/' },
-      { label: 'Leadership Team', value: '/about/leadership-team' },
-      { label: 'Vision, Mission & Values', value: '/about/vision-mission-values' },
-      { label: 'Success Rates', value: '/about/success-rates' },
-      { label: 'Embryology Lab & Technology', value: '/about/embryology-lab-technology' },
-      { label: 'Media & Press', value: '/about/media-press' },
-      { label: 'Awards & Accreditations', value: '/about/awards-accreditations' },
-    ],
+    value: ABOUT_US_HUB_PAGE,
   },
   {
     label: 'Doctors',
@@ -372,32 +319,11 @@ const PAGE_TREE = [
   },
   {
     label: 'Contact Us',
-    children: [
-      { label: 'Book Appointment', value: '/contact/book-appointment' },
-      { label: 'Online Payment', value: '/contact/online-payment' },
-      { label: 'WhatsApp', value: '/contact/whatsapp' },
-      { label: 'Call Back Form', value: '/contact/call-back-form' },
-      { label: 'Centre Locator', value: '/contact/centre-locator' },
-      { label: 'Careers', value: '/contact/careers' },
-      { label: 'Feedback', value: '/contact/feedback' },
-    ],
+    value: CONTACT_US_HUB_PAGE,
   },
   {
     label: 'Training Academy',
-    children: [
-      { label: 'Training Programs Academy', value: '/training-academy' },
-      {
-        label: 'Andrology Technician Training Program',
-        value: '/training-academy/andrology-technician-training-program',
-      },
-      { label: 'Embryo Biopsy Training Program', value: '/training-academy/embryo-biopsy-training-program' },
-      { label: 'Embryologist Training Program', value: '/training-academy/embryologist-training-program' },
-      {
-        label: 'Gynecologic Surgical Training Program',
-        value: '/training-academy/gynecologic-surgical-training-program',
-      },
-      { label: 'Training Registration', value: '/training-academy/training-registration' },
-    ],
+    value: TRAINING_ACADEMY_HUB_PAGE,
   },
   { label: 'Thank You Page', value: '/thank-you' },
 ];
@@ -626,14 +552,17 @@ function SidebarNode({
               event.stopPropagation();
               onToggle(nodeKey);
             }}
-            className="grid h-5 w-5 place-items-center rounded-md border border-zinc-200 bg-white text-[11px] text-zinc-600 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
+            className="grid h-5 w-5 place-items-center rounded-md border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50"
           >
-            <span className={`inline-block transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-              ›
-            </span>
+            <HiChevronRight
+              aria-hidden
+              className={`h-3.5 w-3.5 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            />
           </button>
         ) : (
-          <span className="w-4 text-center text-[10px] text-zinc-300">•</span>
+          <span className="flex w-4 shrink-0 justify-center" aria-hidden>
+            <FaCircle className="h-1 w-1 text-zinc-300" />
+          </span>
         )}
 
         {node.value ? (
@@ -702,6 +631,161 @@ function flattenPageTree(nodes, trail = []) {
     const children = Array.isArray(node.children) ? flattenPageTree(node.children, nextTrail) : [];
     return [...current, ...children];
   });
+}
+
+function sectionPagesToOptions(sectionPages, sectionLabel) {
+  const searchKey = sectionLabel.toLowerCase();
+  return sectionPages.map((p) => ({
+    label: p.label,
+    value: p.value,
+    pathTrail: `${sectionLabel} > ${p.label}`,
+    hierarchyPath: [sectionLabel],
+    searchText: `${searchKey} ${p.label} ${p.value}`.toLowerCase(),
+  }));
+}
+
+function mergePageOptionsFromTree(flatFromTree) {
+  const restTree = flatFromTree.filter((x) => !SEO_HUB_PAGE_IDS.has(x.value));
+  const injected = [
+    ...sectionPagesToOptions(HOME_SECTION_PAGES, 'Home'),
+    ...sectionPagesToOptions(INFERTILITY_TREATMENT_SECTION_PAGES, 'Infertility Treatment'),
+    ...sectionPagesToOptions(INTERNATIONAL_PATIENTS_SECTION_PAGES, 'International Patients'),
+    ...sectionPagesToOptions(IVF_CENTRES_SECTION_PAGES, 'IVF Centres'),
+    ...sectionPagesToOptions(RESOURCES_SECTION_PAGES, 'Resources'),
+    ...sectionPagesToOptions(ABOUT_US_SECTION_PAGES, 'About Us'),
+    ...sectionPagesToOptions(CONTACT_US_SECTION_PAGES, 'Contact Us'),
+    ...sectionPagesToOptions(TRAINING_ACADEMY_SECTION_PAGES, 'Training Academy'),
+  ];
+  const hubEntries = flatFromTree.filter((x) => SEO_HUB_PAGE_IDS.has(x.value));
+  return [...restTree, ...injected, ...hubEntries];
+}
+
+const HUB_PANEL_THEMES = {
+  emerald: {
+    headerBg: 'from-emerald-50/40 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-emerald-50/35',
+    srRing: 'group-hover:ring-emerald-200/80',
+  },
+  cyan: {
+    headerBg: 'from-cyan-50/40 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-cyan-50/35',
+    srRing: 'group-hover:ring-cyan-200/80',
+  },
+  amber: {
+    headerBg: 'from-amber-50/50 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-amber-50/40',
+    srRing: 'group-hover:ring-amber-200/80',
+  },
+  violet: {
+    headerBg: 'from-violet-50/40 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-violet-50/35',
+    srRing: 'group-hover:ring-violet-200/80',
+  },
+  orange: {
+    headerBg: 'from-orange-50/40 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-orange-50/35',
+    srRing: 'group-hover:ring-orange-200/80',
+  },
+  teal: {
+    headerBg: 'from-teal-50/40 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-teal-50/35',
+    srRing: 'group-hover:ring-teal-200/80',
+  },
+  indigo: {
+    headerBg: 'from-indigo-50/50 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-indigo-50/40',
+    srRing: 'group-hover:ring-indigo-200/80',
+  },
+  rose: {
+    headerBg: 'from-rose-50/45 via-white to-[#f8fbff]',
+    rowHover: 'hover:bg-rose-50/40',
+    srRing: 'group-hover:ring-rose-200/80',
+  },
+};
+
+function SectionHubPanel({ title, description, pages, theme, tipSidebarLabel, onEdit }) {
+  const t = HUB_PANEL_THEMES[theme] || HUB_PANEL_THEMES.emerald;
+  const { headerBg, rowHover, srRing } = t;
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-zinc-200/90 bg-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.12)] ring-1 ring-zinc-100/80">
+      <div className={`border-b border-zinc-100/90 bg-gradient-to-br ${headerBg} px-5 py-6 sm:px-8`}>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-[1.65rem]">{title}</h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600">{description}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 self-start rounded-2xl border border-zinc-200/80 bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm sm:flex-col sm:items-end sm:py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Total routes</p>
+            <p className="text-3xl font-bold tabular-nums leading-none text-zinc-900">{pages.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-6">
+        <div className="overflow-hidden rounded-2xl border border-zinc-200/70 bg-zinc-50/50 shadow-inner">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="bg-white/95 backdrop-blur-sm">
+                  <th
+                    scope="col"
+                    className="w-[88px] border-b border-zinc-200 px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-500 sm:px-5"
+                  >
+                    Sr. no.
+                  </th>
+                  <th
+                    scope="col"
+                    className="border-b border-zinc-200 px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-zinc-500 sm:px-5"
+                  >
+                    Pages
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[120px] border-b border-zinc-200 px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-zinc-500 sm:px-5"
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200/80 bg-white">
+                {pages.map((row, index) => (
+                  <tr key={row.value} className={`group transition-colors ${rowHover}`}>
+                    <td className="whitespace-nowrap px-4 py-4 align-middle sm:px-5">
+                      <span
+                        className={`inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg bg-zinc-100 px-2 text-sm font-semibold tabular-nums text-zinc-700 ring-1 ring-zinc-200/80 transition group-hover:bg-white ${srRing}`}
+                      >
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle sm:px-5">
+                      <p className="font-semibold text-zinc-900">{row.label}</p>
+                      <p className="mt-1 font-mono text-xs text-zinc-500">{row.value}</p>
+                    </td>
+                    <td className="px-4 py-4 text-right align-middle sm:px-5">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(row.value)}
+                        aria-label="Edit SEO for this page"
+                        title="Edit"
+                        className="inline-flex size-10 items-center justify-center rounded-xl bg-gradient-to-r from-[#df3655] to-[#e84d6a] text-white shadow-md shadow-[#df3655]/25 ring-1 ring-[#df3655]/20 transition hover:from-[#c92c49] hover:to-[#df3655] hover:shadow-lg hover:shadow-[#df3655]/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#df3655]"
+                      >
+                        <HiPencilSquare aria-hidden className="h-5 w-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          Tip: Select <span className="font-medium text-zinc-700">{tipSidebarLabel}</span> in the sidebar anytime to
+          return here.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function getUserInitials(name = '') {
@@ -798,24 +882,18 @@ export default function HomePage() {
   const [activeDashboardList, setActiveDashboardList] = useState('all');
   const [sectionViewMode, setSectionViewMode] = useState('list');
   const [expandedNodes, setExpandedNodes] = useState({
-    'Infertility Treatment': true,
-    'IVF Centres': true,
-    India: true,
-    'International Patients': true,
-    Resources: true,
-    'About Us': true,
     Doctors: true,
-    'Contact Us': true,
-    'Training Academy': true,
-    Delhi: true,
-    'Uttar Pradesh': true,
   });
 
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
   const isDashboardView = selectedPage === DASHBOARD_PAGE;
-  const isSectionView = useMemo(() => isSectionKey(selectedPage), [selectedPage]);
-  const selectedSectionLabel = useMemo(() => getSectionLabelFromKey(selectedPage), [selectedPage]);
-  const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
+  const isSectionHubView = SEO_HUB_PAGE_IDS.has(selectedPage);
+  const activeSectionHub = SECTION_HUB_UI[selectedPage];
+  const allPageOptions = useMemo(() => mergePageOptionsFromTree(flattenPageTree(PAGE_TREE)), []);
+  const seoPageUrls = useMemo(
+    () => allPageOptions.filter((item) => !SEO_HUB_PAGE_IDS.has(item.value)).map((item) => item.value),
+    [allPageOptions]
+  );
   const pageMetaByValue = useMemo(
     () => new Map(allPageOptions.map((item) => [item.value, item])),
     [allPageOptions]
@@ -841,7 +919,10 @@ export default function HomePage() {
   const filteredSearchResults = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     if (!query) return [];
-    return allPageOptions.filter((item) => item.searchText.includes(query)).slice(0, 8);
+    return allPageOptions
+      .filter((item) => !SEO_HUB_PAGE_IDS.has(item.value))
+      .filter((item) => item.searchText.includes(query))
+      .slice(0, 8);
   }, [allPageOptions, searchText]);
   const userInitials = useMemo(() => getUserInitials(currentUser?.name), [currentUser?.name]);
   const pageOptionByUrl = useMemo(
@@ -877,7 +958,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated || isDashboardView || isSectionView) {
+    if (!isAuthenticated || isDashboardView || isSectionHubView) {
       return undefined;
     }
 
@@ -933,7 +1014,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView]);
+  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView, isSectionHubView]);
 
   useEffect(() => {
     if (!isAuthenticated || !allPageOptions.length) {
@@ -944,23 +1025,24 @@ export default function HomePage() {
     async function loadStats() {
       setStatsLoading(true);
       try {
-        const stats = await fetchSeoStats(allPageOptions.map((item) => item.value));
+        const stats = await fetchSeoStats(seoPageUrls);
         if (isCancelled) return;
         setDashboardStats({
-          totalCount: stats?.totalCount || allPageOptions.length,
+          totalCount: stats?.totalCount || seoPageUrls.length,
           updatedCount: stats?.updatedCount || 0,
-          notUpdatedCount: stats?.notUpdatedCount ?? Math.max(0, allPageOptions.length - (stats?.updatedCount || 0)),
+          notUpdatedCount:
+            stats?.notUpdatedCount ?? Math.max(0, seoPageUrls.length - (stats?.updatedCount || 0)),
           updatedPageUrls: Array.isArray(stats?.updatedPageUrls) ? stats.updatedPageUrls : [],
           notUpdatedPageUrls: Array.isArray(stats?.notUpdatedPageUrls) ? stats.notUpdatedPageUrls : [],
         });
       } catch {
         if (isCancelled) return;
         setDashboardStats({
-          totalCount: allPageOptions.length,
+          totalCount: seoPageUrls.length,
           updatedCount: 0,
-          notUpdatedCount: allPageOptions.length,
+          notUpdatedCount: seoPageUrls.length,
           updatedPageUrls: [],
-          notUpdatedPageUrls: allPageOptions.map((item) => item.value),
+          notUpdatedPageUrls: [...seoPageUrls],
         });
       } finally {
         if (!isCancelled) {
@@ -973,7 +1055,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [isAuthenticated, allPageOptions]);
+  }, [isAuthenticated, seoPageUrls]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1388,7 +1470,7 @@ export default function HomePage() {
             />
             <p className="mt-2 text-xs text-zinc-500">Select a page path to edit SEO details.</p>
             <div className="mt-3 inline-flex items-center rounded-full bg-[#2EA6F7]/10 px-2.5 py-1 text-[11px] font-semibold text-[#1c7fbe]">
-              Total Pages: {allPageOptions.length}
+              Total Pages: {seoPageUrls.length}
             </div>
           </div>
 
@@ -1448,9 +1530,13 @@ export default function HomePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
                     <h1 className="mt-1 text-2xl font-bold text-zinc-900">SEO Admin Panel</h1>
                     <p className="mt-2 text-sm text-zinc-600">
-                      {isDashboardView ? 'Current view:' : 'Selected path:'}{' '}
+                      {isDashboardView || isSectionHubView ? 'Current view:' : 'Selected path:'}{' '}
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
-                        {isDashboardView ? 'Dashboard' : targetPageUrl}
+                        {isDashboardView
+                          ? 'Dashboard'
+                          : activeSectionHub
+                            ? activeSectionHub.title
+                            : targetPageUrl}
                       </span>
                     </p>
                   </div>
@@ -1471,11 +1557,11 @@ export default function HomePage() {
                         }
                       }}
                       placeholder="Search by page name or path (e.g. IVF, /contact/whatsapp)"
-                      disabled={isDashboardView}
+                      disabled={isDashboardView || isSectionHubView}
                       className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none transition focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
                     />
 
-                    {showSearchResults && searchText.trim() && !isDashboardView ? (
+                    {showSearchResults && searchText.trim() && !isDashboardView && !isSectionHubView ? (
                       <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         {filteredSearchResults.length > 0 ? (
                           filteredSearchResults.map((item) => (
@@ -1597,7 +1683,7 @@ export default function HomePage() {
                             </thead>
                             <tbody>
                               {(activeDashboardList === 'all'
-                                ? allPageOptions
+                                ? allPageOptions.filter((item) => !SEO_HUB_PAGE_IDS.has(item.value))
                                 : activeDashboardList === 'updated'
                                   ? updatedPageOptions
                                   : notUpdatedPageOptions
@@ -1629,164 +1715,15 @@ export default function HomePage() {
                       </div>
                     ) : null}
                   </div>
-                ) : isSectionView ? (
-                  <div className="space-y-5">
-                    <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Section</p>
-                          <h2 className="mt-1 text-xl font-bold text-zinc-900">{selectedSectionLabel}</h2>
-                          <p className="mt-2 text-sm text-zinc-600">
-                            Pages list. Form sirf <span className="font-semibold">Edit</span> icon par click karne ke baad khulega.
-                          </p>
-                          <div className="mt-3 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-700">
-                            Total: {sectionPageOptions.length}
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 self-start">
-                          <div
-                            role="tablist"
-                            aria-label="View mode"
-                            className="inline-flex items-center rounded-xl border border-zinc-200 bg-white p-1 shadow-sm"
-                          >
-                            <button
-                              type="button"
-                              role="tab"
-                              aria-selected={sectionViewMode === 'list'}
-                              onClick={() => setSectionViewMode('list')}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                sectionViewMode === 'list'
-                                  ? 'bg-[#2EA6F7] text-white shadow-sm'
-                                  : 'text-zinc-600 hover:bg-zinc-100'
-                              }`}
-                              title="List view"
-                            >
-                              <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                                <path d="M7 5h10M7 10h10M7 15h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                <circle cx="3.5" cy="5" r="1" fill="currentColor" />
-                                <circle cx="3.5" cy="10" r="1" fill="currentColor" />
-                                <circle cx="3.5" cy="15" r="1" fill="currentColor" />
-                              </svg>
-                              List
-                            </button>
-                            <button
-                              type="button"
-                              role="tab"
-                              aria-selected={sectionViewMode === 'grid'}
-                              onClick={() => setSectionViewMode('grid')}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                sectionViewMode === 'grid'
-                                  ? 'bg-[#2EA6F7] text-white shadow-sm'
-                                  : 'text-zinc-600 hover:bg-zinc-100'
-                              }`}
-                              title="Grid view"
-                            >
-                              <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                                <rect x="3" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
-                                <rect x="11" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
-                                <rect x="3" y="11" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
-                                <rect x="11" y="11" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
-                              </svg>
-                              Grid
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {sectionPageOptions.length ? (
-                      sectionViewMode === 'grid' ? (
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                          {sectionPageOptions.map((item, index) => (
-                            <div
-                              key={`${item.value}-${item.pathTrail}`}
-                              className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-[#2EA6F7]/35 hover:shadow-md"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex min-w-0 items-start gap-3">
-                                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#2EA6F7]/10 text-[11px] font-bold text-[#1c7fbe] ring-1 ring-[#2EA6F7]/20">
-                                    {index + 1}
-                                  </span>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-bold text-zinc-900 line-clamp-1">{item.label}</p>
-                                    <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{item.pathTrail}</p>
-                                    <p className="mt-2 rounded-lg bg-zinc-50 px-2.5 py-1.5 font-mono text-[11px] text-zinc-700 ring-1 ring-zinc-100">
-                                      {item.value}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedPage(item.value);
-                                    setSearchText(item.value);
-                                    setShowSearchResults(false);
-                                  }}
-                                  className="shrink-0 rounded-xl border border-zinc-200 bg-white p-2 text-zinc-700 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
-                                  title={`Edit SEO: ${item.value}`}
-                                  aria-label={`Edit SEO for ${item.label}`}
-                                >
-                                  <PencilIcon className="h-5 w-5" />
-                                </button>
-                              </div>
-
-                              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-transparent via-[#2EA6F7]/15 to-transparent opacity-0 transition group-hover:opacity-100" />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                          <div className="hidden items-center gap-3 border-b border-zinc-100 bg-zinc-50/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:flex">
-                            <span className="w-10 shrink-0">S.No</span>
-                            <span className="flex-1">Page</span>
-                            <span className="w-20 shrink-0 text-right">Action</span>
-                          </div>
-                          <ul className="divide-y divide-zinc-100">
-                            {sectionPageOptions.map((item, index) => (
-                              <li
-                                key={`${item.value}-${item.pathTrail}`}
-                                className="flex items-center gap-3 px-4 py-3 transition hover:bg-zinc-50"
-                              >
-                                <span className="grid h-7 w-10 shrink-0 place-items-center rounded-md bg-zinc-100 text-[11px] font-bold text-zinc-700 ring-1 ring-zinc-200">
-                                  {index + 1}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold text-zinc-900 line-clamp-1">{item.label}</p>
-                                    <span className="hidden text-[10px] font-medium uppercase tracking-wide text-zinc-400 sm:inline">
-                                      {item.pathTrail}
-                                    </span>
-                                  </div>
-                                  <p className="mt-1 truncate font-mono text-[11px] text-zinc-600">{item.value}</p>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedPage(item.value);
-                                    setSearchText(item.value);
-                                    setShowSearchResults(false);
-                                  }}
-                                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
-                                  title={`Edit SEO: ${item.value}`}
-                                  aria-label={`Edit SEO for ${item.label}`}
-                                >
-                                  <PencilIcon className="h-4 w-4" />
-                                  Edit
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )
-                    ) : (
-                      <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
-                        No pages found for this section.
-                      </div>
-                    )}
-                  </div>
+                ) : activeSectionHub ? (
+                  <SectionHubPanel
+                    title={activeSectionHub.title}
+                    description="Each route has its own SEO record. Use the pencil icon to open the form for that URL."
+                    pages={activeSectionHub.pages}
+                    theme={activeSectionHub.theme}
+                    tipSidebarLabel={activeSectionHub.tipSidebarLabel}
+                    onEdit={setSelectedPage}
+                  />
                 ) : loading ? (
                   <p className="text-sm text-zinc-600">Loading SEO data...</p>
                 ) : (
@@ -1828,9 +1765,10 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(false)}
-                className="rounded-md px-2 py-1 text-zinc-500 hover:bg-zinc-100"
+                aria-label="Close preview"
+                className="rounded-md p-2 text-zinc-500 transition hover:bg-zinc-100"
               >
-                ✕
+                <HiXMark aria-hidden className="h-6 w-6" />
               </button>
             </div>
 
