@@ -551,12 +551,15 @@ function getSectionAccentClass(topLevelLabel) {
   return accentMap[topLevelLabel] || 'from-zinc-300/30 to-transparent text-zinc-700';
 }
 
+const SECTION_FLAT_LABELS = new Set(['Home']);
+
 function SidebarNode({
   node,
   selectedPage,
   expandedNodes,
   onToggle,
   onSelect,
+  onSelectSection,
   level = 0,
   parentTrail = [],
 }) {
@@ -567,6 +570,38 @@ function SidebarNode({
   const childCount = hasChildren ? node.children.length : 0;
   const topLevelLabel = getTopLevelLabel(node, parentTrail);
   const accentClass = getSectionAccentClass(topLevelLabel);
+  const isFlatSection = level === 0 && !node.value && SECTION_FLAT_LABELS.has(node.label);
+  const isSectionSelected =
+    isFlatSection && isSectionKey(selectedPage) && getSectionLabelFromKey(selectedPage) === node.label;
+
+  if (isFlatSection) {
+    return (
+      <li>
+        <div className="group flex items-center gap-2 rounded-xl bg-white/70 px-2 py-1.5 ring-1 ring-zinc-100">
+          <span className="w-4 text-center text-[10px] text-zinc-300">•</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof onSelectSection === 'function') {
+                onSelectSection(node.label);
+              }
+            }}
+            className={`flex w-full items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left ${accentClass} ${
+              isSectionSelected ? 'ring-1 ring-emerald-400/40' : ''
+            }`}
+            title={`Open ${node.label}`}
+          >
+            <span className="text-sm font-semibold">{node.label}</span>
+            {childCount > 0 ? (
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-zinc-500 ring-1 ring-zinc-200">
+                {childCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li>
@@ -577,6 +612,9 @@ function SidebarNode({
         style={{ marginLeft: `${Math.max(0, level - 1) * 10}px` }}
         onClick={() => {
           if (hasChildren && !node.value) {
+            if (level === 0 && typeof onSelectSection === 'function') {
+              onSelectSection(node.label);
+            }
             onToggle(nodeKey);
           }
         }}
@@ -636,6 +674,7 @@ function SidebarNode({
               expandedNodes={expandedNodes}
               onToggle={onToggle}
               onSelect={onSelect}
+              onSelectSection={onSelectSection}
               level={level + 1}
               parentTrail={[...parentTrail, node.label]}
             />
@@ -677,12 +716,45 @@ function getUserInitials(name = '') {
 }
 
 const DASHBOARD_PAGE = '__dashboard__';
+const SECTION_PREFIX = '__section__:';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
 
 function getInitialSelectedPage() {
   if (typeof window === 'undefined') return DASHBOARD_PAGE;
   const savedPage = window.localStorage.getItem(SELECTED_PAGE_STORAGE_KEY);
   return savedPage || DASHBOARD_PAGE;
+}
+
+function makeSectionKey(sectionLabel) {
+  return `${SECTION_PREFIX}${sectionLabel}`;
+}
+
+function isSectionKey(value) {
+  return String(value || '').startsWith(SECTION_PREFIX);
+}
+
+function getSectionLabelFromKey(value) {
+  if (!isSectionKey(value)) return null;
+  return String(value).slice(SECTION_PREFIX.length) || null;
+}
+
+function PencilIcon({ className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className={className}
+    >
+      <path
+        d="M12.3 3.3l4.4 4.4M3.5 16.5l3.8-.8 9.2-9.2a1.3 1.3 0 000-1.8l-1.5-1.5a1.3 1.3 0 00-1.8 0l-9.2 9.2-.8 3.9z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export default function HomePage() {
@@ -724,6 +796,7 @@ export default function HomePage() {
   });
   const [statsLoading, setStatsLoading] = useState(false);
   const [activeDashboardList, setActiveDashboardList] = useState('all');
+  const [sectionViewMode, setSectionViewMode] = useState('list');
   const [expandedNodes, setExpandedNodes] = useState({
     'Infertility Treatment': true,
     'IVF Centres': true,
@@ -740,6 +813,8 @@ export default function HomePage() {
 
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
   const isDashboardView = selectedPage === DASHBOARD_PAGE;
+  const isSectionView = useMemo(() => isSectionKey(selectedPage), [selectedPage]);
+  const selectedSectionLabel = useMemo(() => getSectionLabelFromKey(selectedPage), [selectedPage]);
   const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
   const pageMetaByValue = useMemo(
     () => new Map(allPageOptions.map((item) => [item.value, item])),
@@ -757,6 +832,12 @@ export default function HomePage() {
     () => JSON.stringify(selectedHierarchyPath),
     [selectedHierarchyPath]
   );
+  const sectionPageOptions = useMemo(() => {
+    if (!selectedSectionLabel) return [];
+    const sectionLabel = selectedSectionLabel.trim();
+    if (!sectionLabel) return [];
+    return allPageOptions.filter((item) => item?.hierarchyPath?.[0] === sectionLabel);
+  }, [allPageOptions, selectedSectionLabel]);
   const filteredSearchResults = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     if (!query) return [];
@@ -796,7 +877,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated || isDashboardView) {
+    if (!isAuthenticated || isDashboardView || isSectionView) {
       return undefined;
     }
 
@@ -1337,6 +1418,10 @@ export default function HomePage() {
                   expandedNodes={expandedNodes}
                   onToggle={handleToggleNode}
                   onSelect={setSelectedPage}
+                  onSelectSection={(sectionLabel) => {
+                    setSelectedPage(makeSectionKey(sectionLabel));
+                    setActiveDashboardList('all');
+                  }}
                   parentTrail={[]}
                 />
               ))}
@@ -1543,6 +1628,164 @@ export default function HomePage() {
                         </div>
                       </div>
                     ) : null}
+                  </div>
+                ) : isSectionView ? (
+                  <div className="space-y-5">
+                    <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Section</p>
+                          <h2 className="mt-1 text-xl font-bold text-zinc-900">{selectedSectionLabel}</h2>
+                          <p className="mt-2 text-sm text-zinc-600">
+                            Pages list. Form sirf <span className="font-semibold">Edit</span> icon par click karne ke baad khulega.
+                          </p>
+                          <div className="mt-3 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-700">
+                            Total: {sectionPageOptions.length}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 self-start">
+                          <div
+                            role="tablist"
+                            aria-label="View mode"
+                            className="inline-flex items-center rounded-xl border border-zinc-200 bg-white p-1 shadow-sm"
+                          >
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={sectionViewMode === 'list'}
+                              onClick={() => setSectionViewMode('list')}
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                sectionViewMode === 'list'
+                                  ? 'bg-[#2EA6F7] text-white shadow-sm'
+                                  : 'text-zinc-600 hover:bg-zinc-100'
+                              }`}
+                              title="List view"
+                            >
+                              <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                                <path d="M7 5h10M7 10h10M7 15h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                <circle cx="3.5" cy="5" r="1" fill="currentColor" />
+                                <circle cx="3.5" cy="10" r="1" fill="currentColor" />
+                                <circle cx="3.5" cy="15" r="1" fill="currentColor" />
+                              </svg>
+                              List
+                            </button>
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={sectionViewMode === 'grid'}
+                              onClick={() => setSectionViewMode('grid')}
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                sectionViewMode === 'grid'
+                                  ? 'bg-[#2EA6F7] text-white shadow-sm'
+                                  : 'text-zinc-600 hover:bg-zinc-100'
+                              }`}
+                              title="Grid view"
+                            >
+                              <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                                <rect x="3" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
+                                <rect x="11" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
+                                <rect x="3" y="11" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
+                                <rect x="11" y="11" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.8" />
+                              </svg>
+                              Grid
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {sectionPageOptions.length ? (
+                      sectionViewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          {sectionPageOptions.map((item, index) => (
+                            <div
+                              key={`${item.value}-${item.pathTrail}`}
+                              className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-[#2EA6F7]/35 hover:shadow-md"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-start gap-3">
+                                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#2EA6F7]/10 text-[11px] font-bold text-[#1c7fbe] ring-1 ring-[#2EA6F7]/20">
+                                    {index + 1}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-bold text-zinc-900 line-clamp-1">{item.label}</p>
+                                    <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{item.pathTrail}</p>
+                                    <p className="mt-2 rounded-lg bg-zinc-50 px-2.5 py-1.5 font-mono text-[11px] text-zinc-700 ring-1 ring-zinc-100">
+                                      {item.value}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedPage(item.value);
+                                    setSearchText(item.value);
+                                    setShowSearchResults(false);
+                                  }}
+                                  className="shrink-0 rounded-xl border border-zinc-200 bg-white p-2 text-zinc-700 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                  title={`Edit SEO: ${item.value}`}
+                                  aria-label={`Edit SEO for ${item.label}`}
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </button>
+                              </div>
+
+                              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-transparent via-[#2EA6F7]/15 to-transparent opacity-0 transition group-hover:opacity-100" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                          <div className="hidden items-center gap-3 border-b border-zinc-100 bg-zinc-50/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:flex">
+                            <span className="w-10 shrink-0">S.No</span>
+                            <span className="flex-1">Page</span>
+                            <span className="w-20 shrink-0 text-right">Action</span>
+                          </div>
+                          <ul className="divide-y divide-zinc-100">
+                            {sectionPageOptions.map((item, index) => (
+                              <li
+                                key={`${item.value}-${item.pathTrail}`}
+                                className="flex items-center gap-3 px-4 py-3 transition hover:bg-zinc-50"
+                              >
+                                <span className="grid h-7 w-10 shrink-0 place-items-center rounded-md bg-zinc-100 text-[11px] font-bold text-zinc-700 ring-1 ring-zinc-200">
+                                  {index + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-zinc-900 line-clamp-1">{item.label}</p>
+                                    <span className="hidden text-[10px] font-medium uppercase tracking-wide text-zinc-400 sm:inline">
+                                      {item.pathTrail}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 truncate font-mono text-[11px] text-zinc-600">{item.value}</p>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedPage(item.value);
+                                    setSearchText(item.value);
+                                    setShowSearchResults(false);
+                                  }}
+                                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                  title={`Edit SEO: ${item.value}`}
+                                  aria-label={`Edit SEO for ${item.label}`}
+                                >
+                                  <PencilIcon className="h-4 w-4" />
+                                  Edit
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                    ) : (
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600 shadow-sm">
+                        No pages found for this section.
+                      </div>
+                    )}
                   </div>
                 ) : loading ? (
                   <p className="text-sm text-zinc-600">Loading SEO data...</p>
