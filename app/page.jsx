@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import SeoForm from './components/SeoForm';
-import { fetchSeo, fetchSeoStats, saveSeo } from '../lib/seoApi';
+import { fetchSeo, fetchSeoStats, normalizePageUrl, saveSeo } from '../lib/seoApi';
 import {
   clearAuthSession,
   getAuthToken,
@@ -210,93 +210,93 @@ const PAGE_TREE = [
       {
         label: 'India',
         children: [
-      {
-        label: 'Delhi',
-        children: [
-          { label: 'Delhi Overview', value: '/best-ivf-centre-in-delhi' },
-          { label: 'Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
-          { label: 'Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
-          { label: 'Janakpuri, New Delhi', value: '/delhi/best-ivf-centre-in-janakpuri/' },
-        ],
-      },
-      {
-        label: 'Uttar Pradesh',
-        children: [
-          { label: 'Uttar Pradesh Overview', value: '/best-ivf-centre-in-uttar-pradesh' },
-          { label: 'Ghaziabad', value: '/uttar-pradesh/best-ivf-centre-in-ghaziabad/' },
-          { label: 'Lucknow', value: '/uttar-pradesh/best-ivf-centre-in-lucknow/' },
-          { label: 'Agra', value: '/uttar-pradesh/best-ivf-centre-in-agra/' },
-          { label: 'Gorakhpur', value: '/uttar-pradesh/best-ivf-centre-in-gorakhpur/' },
-          { label: 'Kanpur', value: '/uttar-pradesh/best-ivf-centre-in-kanpur/' },
-          { label: 'Meerut', value: '/uttar-pradesh/best-ivf-centre-in-meerut/' },
-        ],
-      },
-      {
-        label: 'Bihar',
-        children: [
-          { label: 'Bihar Overview', value: '/best-ivf-centre-in-bihar' },
-          { label: 'Patna', value: '/bihar/best-ivf-centre-in-patna/' },
-          { label: 'Muzaffarpur', value: '/bihar/best-ivf-centre-in-muzaffarpur/' },
-        ],
-      },
-      {
-        label: 'Haryana',
-        children: [
-          { label: 'Haryana Overview', value: '/best-ivf-centre-in-haryana' },
-          { label: 'Faridabad', value: '/haryana/best-ivf-centre-in-faridabad/' },
-          { label: 'Gurugram', value: '/haryana/best-ivf-centre-in-gurugram/' },
-        ],
-      },
-      {
-        label: 'Jharkhand',
-        children: [
-          { label: 'Jharkhand Overview', value: '/best-ivf-centre-in-jharkhand' },
-          { label: 'Ranchi', value: '/jharkhand/best-ivf-centre-in-ranchi/' },
-        ],
-      },
-      {
-        label: 'Uttarakhand',
-        children: [
-          { label: 'Uttarakhand Overview', value: '/best-ivf-centre-in-uttarakhand' },
-          { label: 'Haldwani', value: '/uttarakhand/best-ivf-centre-in-haldwani/' },
-        ],
-      },
-      {
-        label: 'Assam',
-        children: [
-          { label: 'Assam Overview', value: '/best-ivf-centre-in-assam' },
-          { label: 'Guwahati', value: '/assam/best-ivf-centre-in-guwahati/' },
-        ],
-      },
-      {
-        label: 'Kerala',
-        children: [
-          { label: 'Kerala Overview', value: '/best-ivf-centre-in-kerala' },
-          { label: 'Kasaragod', value: '/kerala/best-ivf-centre-in-kasaragod/' },
-          { label: 'Kochi', value: '/kerala/best-ivf-centre-in-kochi/' },
-        ],
-      },
-      {
-        label: 'Jammu & Kashmir',
-        children: [
-          { label: 'J&K Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
-          { label: 'Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
-        ],
-      },
-      {
-        label: 'West Bengal',
-        children: [
-          { label: 'West Bengal Overview', value: '/best-ivf-centre-in-west-bengal' },
-          { label: 'Kolkata', value: '/west-bengal/best-ivf-centre-in-kolkata/' },
-        ],
-      },
-      {
-        label: 'International',
-        children: [
-          { label: 'International Overview', value: '/ivf-centres/international' },
-          { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
-        ],
-      },
+          {
+            label: 'Delhi',
+            children: [
+              { label: 'Delhi Overview', value: '/best-ivf-centre-in-delhi' },
+              { label: 'Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
+              { label: 'Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
+              { label: 'Janakpuri, New Delhi', value: '/delhi/best-ivf-centre-in-janakpuri/' },
+            ],
+          },
+          {
+            label: 'Uttar Pradesh',
+            children: [
+              { label: 'Uttar Pradesh Overview', value: '/best-ivf-centre-in-uttar-pradesh' },
+              { label: 'Ghaziabad', value: '/uttar-pradesh/best-ivf-centre-in-ghaziabad/' },
+              { label: 'Lucknow', value: '/uttar-pradesh/best-ivf-centre-in-lucknow/' },
+              { label: 'Agra', value: '/uttar-pradesh/best-ivf-centre-in-agra/' },
+              { label: 'Gorakhpur', value: '/uttar-pradesh/best-ivf-centre-in-gorakhpur/' },
+              { label: 'Kanpur', value: '/uttar-pradesh/best-ivf-centre-in-kanpur/' },
+              { label: 'Meerut', value: '/uttar-pradesh/best-ivf-centre-in-meerut/' },
+            ],
+          },
+          {
+            label: 'Bihar',
+            children: [
+              { label: 'Bihar Overview', value: '/best-ivf-centre-in-bihar' },
+              { label: 'Patna', value: '/bihar/best-ivf-centre-in-patna/' },
+              { label: 'Muzaffarpur', value: '/bihar/best-ivf-centre-in-muzaffarpur/' },
+            ],
+          },
+          {
+            label: 'Haryana',
+            children: [
+              { label: 'Haryana Overview', value: '/best-ivf-centre-in-haryana' },
+              { label: 'Faridabad', value: '/haryana/best-ivf-centre-in-faridabad/' },
+              { label: 'Gurugram', value: '/haryana/best-ivf-centre-in-gurugram/' },
+            ],
+          },
+          {
+            label: 'Jharkhand',
+            children: [
+              { label: 'Jharkhand Overview', value: '/best-ivf-centre-in-jharkhand' },
+              { label: 'Ranchi', value: '/jharkhand/best-ivf-centre-in-ranchi/' },
+            ],
+          },
+          {
+            label: 'Uttarakhand',
+            children: [
+              { label: 'Uttarakhand Overview', value: '/best-ivf-centre-in-uttarakhand' },
+              { label: 'Haldwani', value: '/uttarakhand/best-ivf-centre-in-haldwani/' },
+            ],
+          },
+          {
+            label: 'Assam',
+            children: [
+              { label: 'Assam Overview', value: '/best-ivf-centre-in-assam' },
+              { label: 'Guwahati', value: '/assam/best-ivf-centre-in-guwahati/' },
+            ],
+          },
+          {
+            label: 'Kerala',
+            children: [
+              { label: 'Kerala Overview', value: '/best-ivf-centre-in-kerala' },
+              { label: 'Kasaragod', value: '/kerala/best-ivf-centre-in-kasaragod/' },
+              { label: 'Kochi', value: '/kerala/best-ivf-centre-in-kochi/' },
+            ],
+          },
+          {
+            label: 'Jammu & Kashmir',
+            children: [
+              { label: 'J&K Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
+              { label: 'Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
+            ],
+          },
+          {
+            label: 'West Bengal',
+            children: [
+              { label: 'West Bengal Overview', value: '/best-ivf-centre-in-west-bengal' },
+              { label: 'Kolkata', value: '/west-bengal/best-ivf-centre-in-kolkata/' },
+            ],
+          },
+          {
+            label: 'International',
+            children: [
+              { label: 'International Overview', value: '/ivf-centres/international' },
+              { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
+            ],
+          },
         ],
       },
     ],
@@ -551,6 +551,27 @@ function getSectionAccentClass(topLevelLabel) {
   return accentMap[topLevelLabel] || 'from-zinc-300/30 to-transparent text-zinc-700';
 }
 
+/** Walk PAGE_TREE following a sequence of labels and return the matching node, or null. */
+function findNodeByLabelPath(tree, labelPath) {
+  if (!Array.isArray(labelPath) || labelPath.length === 0) return null;
+  let nodes = Array.isArray(tree) ? tree : [];
+  let foundNode = null;
+  for (const label of labelPath) {
+    foundNode = nodes.find((candidate) => candidate?.label === label) || null;
+    if (!foundNode) return null;
+    nodes = Array.isArray(foundNode.children) ? foundNode.children : [];
+  }
+  return foundNode;
+}
+
+/** Counts every page URL (leaf with `value`) under this node, including nested groups. */
+function countLeafPagesInTree(node) {
+  if (!node) return 0;
+  if (node.value) return 1;
+  if (!Array.isArray(node.children) || node.children.length === 0) return 0;
+  return node.children.reduce((total, child) => total + countLeafPagesInTree(child), 0);
+}
+
 function SidebarNode({
   node,
   selectedPage,
@@ -568,19 +589,18 @@ function SidebarNode({
   const isExpanded = expandedNodes[nodeKey];
   const isSelected = node.value && selectedPage === node.value;
   const isSectionSelected = !node.value && selectedSectionKey === sectionKey;
-  const childCount = hasChildren ? node.children.length : 0;
+  const descendantPageCount = !node.value ? countLeafPagesInTree(node) : 0;
   const topLevelLabel = getTopLevelLabel(node, parentTrail);
   const accentClass = getSectionAccentClass(topLevelLabel);
-  const disableExpand = level === 0 && node.label === 'Home';
+  const disableExpand = level === 0;
   const showChevron = hasChildren && !disableExpand;
   const showChildren = hasChildren && isExpanded && !disableExpand;
 
   return (
     <li>
       <div
-        className={`group flex items-center gap-2 rounded-xl transition ${
-          level === 0 ? 'bg-white/70 px-2 py-1.5 ring-1 ring-zinc-100' : 'px-1 py-0.5'
-        }`}
+        className={`group flex items-center gap-2 rounded-xl transition ${level === 0 ? 'bg-white/70 px-2 py-1.5 ring-1 ring-zinc-100' : 'px-1 py-0.5'
+          }`}
         style={{ marginLeft: `${Math.max(0, level - 1) * 10}px` }}
       >
         {showChevron ? (
@@ -606,11 +626,10 @@ function SidebarNode({
           <button
             type="button"
             onClick={() => onSelect(node.value)}
-            className={`w-full rounded-lg px-2.5 py-1.5 text-left text-sm ${
-              isSelected
-                ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 font-semibold text-[#df3655] ring-1 ring-[#df3655]/20'
-                : 'text-zinc-700 transition hover:bg-zinc-100/80'
-            }`}
+            className={`w-full rounded-lg px-2.5 py-1.5 text-left text-sm ${isSelected
+              ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 font-semibold text-[#df3655] ring-1 ring-[#df3655]/20'
+              : 'text-zinc-700 transition hover:bg-zinc-100/80'
+              }`}
             title={node.value}
           >
             <span className="line-clamp-1">{node.label}</span>
@@ -622,15 +641,14 @@ function SidebarNode({
               onSelectSection(node, parentTrail);
               if (!disableExpand && !isExpanded) onToggle(nodeKey);
             }}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left transition ${accentClass} ${
-              isSectionSelected ? 'ring-2 ring-[#df3655]/40 shadow-sm' : 'hover:brightness-95'
-            }`}
+            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left transition ${accentClass} ${isSectionSelected ? 'ring-2 ring-[#df3655]/40 shadow-sm' : 'hover:brightness-95'
+              }`}
             title="Click to view all pages in this section"
           >
             <span className="text-sm font-semibold">{node.label}</span>
-            {childCount > 0 ? (
+            {descendantPageCount > 0 ? (
               <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-zinc-500 ring-1 ring-zinc-200">
-                {childCount}
+                {descendantPageCount}
               </span>
             ) : null}
           </button>
@@ -664,14 +682,14 @@ function flattenPageTree(nodes, trail = []) {
     const nextTrail = [...trail, node.label];
     const current = node.value
       ? [
-          {
-            label: node.label,
-            value: node.value,
-            pathTrail: nextTrail.join(' > '),
-            hierarchyPath: nextTrail.length > 1 ? nextTrail.slice(0, -1) : nextTrail,
-            searchText: `${node.label} ${node.value} ${nextTrail.join(' ')}`.toLowerCase(),
-          },
-        ]
+        {
+          label: node.label,
+          value: node.value,
+          pathTrail: nextTrail.join(' > '),
+          hierarchyPath: nextTrail.length > 1 ? nextTrail.slice(0, -1) : nextTrail,
+          searchText: `${node.label} ${node.value} ${nextTrail.join(' ')}`.toLowerCase(),
+        },
+      ]
       : [];
     const children = Array.isArray(node.children) ? flattenPageTree(node.children, nextTrail) : [];
     return [...current, ...children];
@@ -700,7 +718,7 @@ function getInitialSelectedPage() {
 
 export default function HomePage() {
   const isHydrated = useSyncExternalStore(
-    () => () => {},
+    () => () => { },
     () => true,
     () => false
   );
@@ -718,6 +736,7 @@ export default function HomePage() {
   const userMenuRef = useRef(null);
   const [selectedPage, setSelectedPage] = useState(getInitialSelectedPage);
   const [selectedSection, setSelectedSection] = useState(null);
+  const [previousSection, setPreviousSection] = useState(null);
   const [sectionViewMode, setSectionViewMode] = useState('list');
   const [formData, setFormData] = useState(makeEmptySeo('/'));
   const [loading, setLoading] = useState(false);
@@ -754,7 +773,8 @@ export default function HomePage() {
   });
 
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
-  const isDashboardView = selectedPage === DASHBOARD_PAGE;
+  const isSectionView = Boolean(selectedSection);
+  const isDashboardView = selectedPage === DASHBOARD_PAGE && !isSectionView;
   const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
   const pageMetaByValue = useMemo(
     () => new Map(allPageOptions.map((item) => [item.value, item])),
@@ -778,23 +798,23 @@ export default function HomePage() {
     return allPageOptions.filter((item) => item.searchText.includes(query)).slice(0, 8);
   }, [allPageOptions, searchText]);
   const userInitials = useMemo(() => getUserInitials(currentUser?.name), [currentUser?.name]);
-  const pageOptionByUrl = useMemo(
-    () => new Map(allPageOptions.map((item) => [item.value, item])),
+  const pageOptionByNormalizedUrl = useMemo(
+    () => new Map(allPageOptions.map((item) => [normalizePageUrl(item.value), item])),
     [allPageOptions]
   );
   const updatedPageOptions = useMemo(
     () =>
       (dashboardStats.updatedPageUrls || [])
-        .map((url) => pageOptionByUrl.get(url))
+        .map((url) => pageOptionByNormalizedUrl.get(normalizePageUrl(url)))
         .filter(Boolean),
-    [dashboardStats.updatedPageUrls, pageOptionByUrl]
+    [dashboardStats.updatedPageUrls, pageOptionByNormalizedUrl]
   );
   const notUpdatedPageOptions = useMemo(
     () =>
       (dashboardStats.notUpdatedPageUrls || [])
-        .map((url) => pageOptionByUrl.get(url))
+        .map((url) => pageOptionByNormalizedUrl.get(normalizePageUrl(url)))
         .filter(Boolean),
-    [dashboardStats.notUpdatedPageUrls, pageOptionByUrl]
+    [dashboardStats.notUpdatedPageUrls, pageOptionByNormalizedUrl]
   );
   const selectedSectionKey = useMemo(() => {
     if (!selectedSection) return '';
@@ -805,22 +825,32 @@ export default function HomePage() {
     return flattenPageTree([selectedSection.node], selectedSection.parentTrail || []);
   }, [selectedSection]);
   const updatedPageUrlSet = useMemo(
-    () => new Set(dashboardStats.updatedPageUrls || []),
+    () => new Set((dashboardStats.updatedPageUrls || []).map((u) => normalizePageUrl(u))),
     [dashboardStats.updatedPageUrls]
   );
-  const isSectionView = Boolean(selectedSection) && !isDashboardView;
 
   function handleToggleNode(nodeKey) {
     setExpandedNodes((prev) => ({ ...prev, [nodeKey]: !prev[nodeKey] }));
   }
 
+  function deriveParentSection(value) {
+    const pageMeta = pageMetaByValue.get(value);
+    const hierarchyPath = pageMeta?.hierarchyPath || [];
+    if (!hierarchyPath.length) return null;
+    const parentNode = findNodeByLabelPath(PAGE_TREE, hierarchyPath);
+    if (!parentNode) return null;
+    return { node: parentNode, parentTrail: hierarchyPath.slice(0, -1) };
+  }
+
   function handleSelectPage(value) {
+    setPreviousSection(selectedSection || deriveParentSection(value));
     setSelectedPage(value);
     setSelectedSection(null);
   }
 
   function handleSelectSection(node, parentTrail) {
     setSelectedSection({ node, parentTrail: parentTrail || [] });
+    setPreviousSection(null);
     setSuccessMessage('');
     setErrorMessage('');
   }
@@ -828,14 +858,27 @@ export default function HomePage() {
   function handleOpenDashboard() {
     setSelectedPage(DASHBOARD_PAGE);
     setSelectedSection(null);
+    setPreviousSection(null);
     setActiveDashboardList('all');
   }
 
   function handleSelectFromSearch(item) {
+    setPreviousSection(selectedSection || deriveParentSection(item.value));
     setSelectedPage(item.value);
     setSelectedSection(null);
     setSearchText(item.value);
     setShowSearchResults(false);
+  }
+
+  function handleGoBackFromForm() {
+    if (previousSection) {
+      setSelectedSection(previousSection);
+      setPreviousSection(null);
+      setSuccessMessage('');
+      setErrorMessage('');
+      return;
+    }
+    handleOpenDashboard();
   }
 
   function startSidebarResize() {
@@ -843,7 +886,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated || isDashboardView) {
+    if (!isAuthenticated || isDashboardView || isSectionView) {
       return undefined;
     }
 
@@ -899,7 +942,13 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView]);
+  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView, isSectionView]);
+
+  useEffect(() => {
+    if (!successMessage) return undefined;
+    const timeoutId = window.setTimeout(() => setSuccessMessage(''), 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage]);
 
   useEffect(() => {
     if (!isAuthenticated || !allPageOptions.length) {
@@ -1192,40 +1241,38 @@ export default function HomePage() {
 
           <div className="mt-5 flex justify-center">
             <div className="inline-flex rounded-xl bg-zinc-100 p-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setAuthStep('credentials');
-                setShowPassword(false);
-                setOtpTimer(0);
-                setAuthError('');
-                setAuthInfo('');
-                setAuthForm((prev) => ({ ...prev, otp: '' }));
-              }}
-              className={`rounded-lg px-6 py-2.5 text-base font-semibold ${
-                authMode === 'login' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('signup');
-                setAuthStep('credentials');
-                setShowPassword(false);
-                setOtpTimer(0);
-                setAuthError('');
-                setAuthInfo('');
-                setAuthForm((prev) => ({ ...prev, otp: '' }));
-              }}
-              className={`rounded-lg px-6 py-2.5 text-base font-semibold ${
-                authMode === 'signup' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
-              }`}
-            >
-              Signup
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthStep('credentials');
+                  setShowPassword(false);
+                  setOtpTimer(0);
+                  setAuthError('');
+                  setAuthInfo('');
+                  setAuthForm((prev) => ({ ...prev, otp: '' }));
+                }}
+                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'login' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+                  }`}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('signup');
+                  setAuthStep('credentials');
+                  setShowPassword(false);
+                  setOtpTimer(0);
+                  setAuthError('');
+                  setAuthInfo('');
+                  setAuthForm((prev) => ({ ...prev, otp: '' }));
+                }}
+                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'signup' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+                  }`}
+              >
+                Signup
+              </button>
             </div>
           </div>
 
@@ -1365,11 +1412,10 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={handleOpenDashboard}
-                  className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
-                    isDashboardView
-                      ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#df3655] ring-1 ring-[#df3655]/20'
-                      : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
-                  }`}
+                  className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${isDashboardView
+                    ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#df3655] ring-1 ring-[#df3655]/20'
+                    : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                    }`}
                 >
                   Dashboard
                 </button>
@@ -1393,9 +1439,8 @@ export default function HomePage() {
           <button
             type="button"
             onMouseDown={startSidebarResize}
-            className={`absolute right-0 top-0 h-full w-2 translate-x-1/2 cursor-col-resize rounded-full transition ${
-              isResizingSidebar ? 'bg-[#2EA6F7]/30' : 'bg-transparent hover:bg-[#2EA6F7]/20'
-            }`}
+            className={`absolute right-0 top-0 h-full w-2 translate-x-1/2 cursor-col-resize rounded-full transition ${isResizingSidebar ? 'bg-[#2EA6F7]/30' : 'bg-transparent hover:bg-[#2EA6F7]/20'
+              }`}
             title="Drag to resize sidebar"
             aria-label="Resize sidebar"
           />
@@ -1409,12 +1454,47 @@ export default function HomePage() {
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
                     <h1 className="mt-1 text-2xl font-bold text-zinc-900">SEO Admin Panel</h1>
-                    <p className="mt-2 text-sm text-zinc-600">
-                      {isDashboardView
-                        ? 'Current view:'
-                        : isSectionView
-                          ? 'Section:'
-                          : 'Selected path:'}{' '}
+                    <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+                      {!isDashboardView && !isSectionView ? (
+                        <button
+                          type="button"
+                          onClick={handleGoBackFromForm}
+                          className="inline-grid h-7 w-7 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-600 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                          title={
+                            previousSection
+                              ? `Back to ${previousSection.node.label}`
+                              : 'Back to Dashboard'
+                          }
+                          aria-label={
+                            previousSection
+                              ? `Back to ${previousSection.node.label}`
+                              : 'Back to Dashboard'
+                          }
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                          </svg>
+                        </button>
+                      ) : null}
+                      <span>
+                        {isDashboardView
+                          ? 'Current view:'
+                          : isSectionView
+                            ? 'Section:'
+                            : 'Selected path:'}
+                      </span>
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
                         {isDashboardView
                           ? 'Dashboard'
@@ -1470,11 +1550,10 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                      className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${
-                        isUserMenuOpen
-                          ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
-                          : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
-                      }`}
+                      className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${isUserMenuOpen
+                        ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
+                        : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
+                        }`}
                       title="User menu"
                       aria-label="User menu"
                     >
@@ -1623,11 +1702,10 @@ export default function HomePage() {
                           <button
                             type="button"
                             onClick={() => setSectionViewMode('list')}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                              sectionViewMode === 'list'
-                                ? 'bg-[#df3655] text-white shadow-sm'
-                                : 'text-zinc-600 hover:bg-zinc-100'
-                            }`}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${sectionViewMode === 'list'
+                              ? 'bg-[#df3655] text-white shadow-sm'
+                              : 'text-zinc-600 hover:bg-zinc-100'
+                              }`}
                             title="List view"
                             aria-pressed={sectionViewMode === 'list'}
                           >
@@ -1655,11 +1733,10 @@ export default function HomePage() {
                           <button
                             type="button"
                             onClick={() => setSectionViewMode('grid')}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                              sectionViewMode === 'grid'
-                                ? 'bg-[#df3655] text-white shadow-sm'
-                                : 'text-zinc-600 hover:bg-zinc-100'
-                            }`}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${sectionViewMode === 'grid'
+                              ? 'bg-[#df3655] text-white shadow-sm'
+                              : 'text-zinc-600 hover:bg-zinc-100'
+                              }`}
                             title="Grid view"
                             aria-pressed={sectionViewMode === 'grid'}
                           >
@@ -1722,7 +1799,7 @@ export default function HomePage() {
                             </thead>
                             <tbody>
                               {sectionPages.map((item, index) => {
-                                const isUpdated = updatedPageUrlSet.has(item.value);
+                                const isUpdated = updatedPageUrlSet.has(normalizePageUrl(item.value));
                                 return (
                                   <tr
                                     key={`${item.value}-${item.pathTrail}`}
@@ -1743,16 +1820,14 @@ export default function HomePage() {
                                     </td>
                                     <td className="px-3 py-2.5">
                                       <span
-                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                                          isUpdated
-                                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
-                                            : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
-                                        }`}
+                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isUpdated
+                                          ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                          : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                                          }`}
                                       >
                                         <span
-                                          className={`inline-block h-1.5 w-1.5 rounded-full ${
-                                            isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
-                                          }`}
+                                          className={`inline-block h-1.5 w-1.5 rounded-full ${isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
+                                            }`}
                                           aria-hidden="true"
                                         />
                                         {isUpdated ? 'Updated' : 'Pending'}
@@ -1792,7 +1867,7 @@ export default function HomePage() {
                     ) : (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {sectionPages.map((item, index) => {
-                          const isUpdated = updatedPageUrlSet.has(item.value);
+                          const isUpdated = updatedPageUrlSet.has(normalizePageUrl(item.value));
                           return (
                             <div
                               key={`${item.value}-${item.pathTrail}`}
@@ -1804,9 +1879,8 @@ export default function HomePage() {
                                     {index + 1}
                                   </span>
                                   <span
-                                    className={`inline-flex h-2 w-2 shrink-0 rounded-full ${
-                                      isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
-                                    }`}
+                                    className={`inline-flex h-2 w-2 shrink-0 rounded-full ${isUpdated ? 'bg-emerald-500' : 'bg-amber-500'
+                                      }`}
                                     aria-hidden="true"
                                   />
                                   <p
@@ -1823,11 +1897,10 @@ export default function HomePage() {
                                   {item.value}
                                 </p>
                                 <span
-                                  className={`mt-3 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                                    isUpdated
-                                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
-                                      : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
-                                  }`}
+                                  className={`mt-3 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isUpdated
+                                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                    : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                                    }`}
                                 >
                                   {isUpdated ? 'SEO Updated' : 'SEO Pending'}
                                 </span>
@@ -1869,7 +1942,29 @@ export default function HomePage() {
                       onChange={handleFieldChange}
                     />
 
-                    <div className="flex items-center gap-3 pb-2">
+                    <div className="flex flex-wrap items-center gap-3 pb-2">
+                      <button
+                        type="button"
+                        onClick={handleGoBackFromForm}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <line x1="19" y1="12" x2="5" y2="12" />
+                          <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                        Back
+                      </button>
                       <button
                         type="button"
                         disabled={saving}
@@ -1882,13 +1977,42 @@ export default function HomePage() {
                   </form>
                 )}
 
-                {successMessage ? <p className="mt-4 text-sm text-green-700">{successMessage}</p> : null}
                 {errorMessage ? <p className="mt-4 text-sm text-red-600">{errorMessage}</p> : null}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {successMessage ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md animate-in fade-in"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex flex-col items-center gap-4 rounded-3xl bg-white px-10 py-8 text-center shadow-2xl ring-1 ring-emerald-200">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-emerald-600"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <p className="text-lg font-bold text-zinc-900">{successMessage}</p>
+            <p className="text-xs text-zinc-500">Your changes have been saved.</p>
+          </div>
+        </div>
+      ) : null}
 
       {isPreviewOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -1909,7 +2033,7 @@ export default function HomePage() {
 
             <div className="max-h-[65vh] overflow-auto p-5">
               <p className="mb-2 text-xs text-zinc-500">
-              You can edit directly within the preview. Upon confirming the save, these edited tags will be saved.
+                You can edit directly within the preview. Upon confirming the save, these edited tags will be saved.
               </p>
               <textarea
                 value={previewDraft}
