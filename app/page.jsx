@@ -439,6 +439,7 @@ const SEO_FIELDS = [
   'itemImage',
   'itemAuthor',
   'itemOrganization',
+  'rawHeadTags',
 ];
 
 function makeEmptySeo(pageUrl) {
@@ -1052,6 +1053,10 @@ export default function HomePage() {
 
     if (value('canonical')) tags.push(`<link rel="canonical" href="${value('canonical')}" />`);
     if (value('alternate')) tags.push(`<link rel="alternate" href="${value('alternate')}" />`);
+
+    if (value('rawHeadTags')) {
+      tags.push('', '<!-- Custom raw tags (saved as-is) -->', value('rawHeadTags'));
+    }
 
     return tags.length
       ? [`<!-- HEAD preview for ${targetPageUrl} -->`, ...tags].join('\n')
