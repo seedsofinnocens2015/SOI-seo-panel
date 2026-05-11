@@ -52,15 +52,9 @@ const TEXTAREA_FIELDS = new Set([
   'ogDescription',
   'twitterDescription',
   'itemDescription',
-  'rawHeadTags',
 ]);
 
-const TEXTAREA_ROWS = { rawHeadTags: 12 };
-
 function toLabel(fieldName) {
-  if (fieldName === 'rawHeadTags') {
-    return 'Custom raw SEO tags (HTML)';
-  }
   return fieldName
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (char) => char.toUpperCase())
@@ -73,17 +67,15 @@ function Field({ name, value, onChange }) {
   const placeholder = `Enter ${toLabel(name)}`;
 
   if (TEXTAREA_FIELDS.has(name)) {
-    const rows = TEXTAREA_ROWS[name] ?? 3;
     return (
       <textarea
         id={name}
         name={name}
-        rows={rows}
+        rows={3}
         value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
-        spellCheck={name === 'rawHeadTags' ? false : undefined}
-        className={name === 'rawHeadTags' ? `${commonClasses} font-mono text-xs leading-relaxed` : commonClasses}
+        className={commonClasses}
       />
     );
   }
@@ -148,14 +140,6 @@ export default function SeoForm({ formData, onChange }) {
       subtitle: 'Structured data fields used for knowledge and rich snippets.',
       accent: 'from-violet-400/15 to-transparent',
       fields: FIELD_GROUPS.itemSchema,
-    },
-    {
-      key: 'rawHeadTags',
-      title: 'Custom raw tags',
-      subtitle:
-        'Usually JSON-LD: one or more <script type="application/ld+json"> blocks. Optional extra <meta> / <link> only — do not paste <style>, <div>, or full document tags (they can break the site).',
-      accent: 'from-emerald-400/15 to-transparent',
-      fields: ['rawHeadTags'],
     },
   ];
 
