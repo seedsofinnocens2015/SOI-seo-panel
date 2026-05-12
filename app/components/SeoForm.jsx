@@ -52,6 +52,7 @@ const TEXTAREA_FIELDS = new Set([
   'ogDescription',
   'twitterDescription',
   'itemDescription',
+  'rawHeadTags',
 ]);
 
 function toLabel(fieldName) {
@@ -67,11 +68,12 @@ function Field({ name, value, onChange }) {
   const placeholder = `Enter ${toLabel(name)}`;
 
   if (TEXTAREA_FIELDS.has(name)) {
+    const rows = name === 'rawHeadTags' ? 8 : 3;
     return (
       <textarea
         id={name}
         name={name}
-        rows={3}
+        rows={rows}
         value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
@@ -96,14 +98,20 @@ function Field({ name, value, onChange }) {
 function FieldGrid({ fields, formData, onChange }) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {fields.map((field) => (
-        <div key={field} className="rounded-xl border border-zinc-100 bg-white/80 p-3">
-          <label htmlFor={field} className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-            {toLabel(field)}
-          </label>
-          <Field name={field} value={formData[field]} onChange={onChange} />
-        </div>
-      ))}
+      {fields.map((field) => {
+        const fullWidth = field === 'rawHeadTags';
+        return (
+          <div
+            key={field}
+            className={`rounded-xl border border-zinc-100 bg-white/80 p-3 ${fullWidth ? 'lg:col-span-2' : ''}`}
+          >
+            <label htmlFor={field} className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              {toLabel(field)}
+            </label>
+            <Field name={field} value={formData[field]} onChange={onChange} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -140,6 +148,13 @@ export default function SeoForm({ formData, onChange }) {
       subtitle: 'Structured data fields used for knowledge and rich snippets.',
       accent: 'from-violet-400/15 to-transparent',
       fields: FIELD_GROUPS.itemSchema,
+    },
+    {
+      key: 'rawHeadTags',
+      title: 'Raw Head Tags',
+      subtitle: 'Paste raw meta/script tags to inject directly in the page head.',
+      accent: 'from-amber-400/15 to-transparent',
+      fields: ['rawHeadTags'],
     },
   ];
 

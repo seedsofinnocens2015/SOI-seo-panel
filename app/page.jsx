@@ -439,6 +439,7 @@ const SEO_FIELDS = [
   'itemImage',
   'itemAuthor',
   'itemOrganization',
+  'rawHeadTags',
 ];
 
 function makeEmptySeo(pageUrl) {
@@ -527,6 +528,11 @@ function parsePreviewToSeoData(previewText, baseData, pageUrl) {
     /<link\s+[^>]*rel\s*=\s*"alternate"[^>]*href\s*=\s*"([^"]*)"[^>]*\/?>/i
   );
   if (alternateMatch) nextData.alternate = alternateMatch[1].trim();
+
+  const rawBlockMatch = previewText.match(
+    /<!--\s*Raw head tags start\s*-->([\s\S]*?)<!--\s*Raw head tags end\s*-->/i
+  );
+  nextData.rawHeadTags = rawBlockMatch ? rawBlockMatch[1].trim() : (baseData.rawHeadTags || '');
 
   return nextData;
 }
@@ -1052,6 +1058,11 @@ export default function HomePage() {
 
     if (value('canonical')) tags.push(`<link rel="canonical" href="${value('canonical')}" />`);
     if (value('alternate')) tags.push(`<link rel="alternate" href="${value('alternate')}" />`);
+    if (value('rawHeadTags')) {
+      tags.push('<!-- Raw head tags start -->');
+      tags.push(value('rawHeadTags'));
+      tags.push('<!-- Raw head tags end -->');
+    }
 
     return tags.length
       ? [`<!-- HEAD preview for ${targetPageUrl} -->`, ...tags].join('\n')
