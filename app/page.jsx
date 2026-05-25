@@ -14,6 +14,7 @@ import {
   verifyLoginOtp,
   verifySignupOtp,
 } from '../lib/authApi';
+import { BLOG_PAGE_TREE } from '../lib/blogPageTree';
 
 const PAGE_TREE = [
   {
@@ -174,7 +175,10 @@ const PAGE_TREE = [
             label: 'Fibroids, Polyps and Adenomyosis',
             value: '/reproductive-health-conditions/fibroids-polyps-and-adenomyosis',
           },
-          { label: 'Tuberculosis', value: '/reproductive-health-conditions/tuberculosis' },
+          {
+            label: 'Female Genital Tuberculosis',
+            value: '/reproductive-health-conditions/female-genital-tuberculosis',
+          },
           {
             label: 'Recurrent Miscarriages',
             value: '/reproductive-health-conditions/recurrent-miscarriages',
@@ -184,8 +188,8 @@ const PAGE_TREE = [
             value: '/reproductive-health-conditions/reasons-for-delayed-periods-but-not-pregnant',
           },
           {
-            label: 'What is Ovarian Hyperstimulation',
-            value: '/reproductive-health-conditions/what-is-ovarian-hyperstimulation',
+            label: 'Ovarian Hyperstimulation Syndrome (OHSS)',
+            value: '/reproductive-health-conditions/ovarian-hyperstimulation-syndrome-ohss',
           },
         ],
       },
@@ -197,8 +201,8 @@ const PAGE_TREE = [
             value: '/fertility-wellness/how-to-boost-up-fertility-with-the-colours-of-food',
           },
           {
-            label: 'Yoga and Fertility',
-            value: '/fertility-wellness/yoga-and-fertility-heres-how-yoga-can-support-fertility',
+            label: 'Yoga For Fertility',
+            value: '/fertility-wellness/yoga-for-fertility',
           },
         ],
       },
@@ -343,7 +347,7 @@ const PAGE_TREE = [
           { label: 'Dr. Alpana Razadan', value: '/genetic-expert/dr-alpana-razadan' },
           { label: 'Dr. Lisha Singh', value: '/ivf-doctor/dr-lisha-singh-ivf-specialist' },
           { label: 'Dr. Monika Maan', value: '/ivf-doctor/dr-monika-mann-ivf-specialist' },
-          { label: 'Dr. Pratik Kakani', value: '/ivf-doctor/dr-pratik-kakani-ivf-specialists' },
+          { label: 'Dr. Pratik Kakani', value: '/ivf-doctor/dr-pratik-kakani-gynae-endoscopy' },
           { label: 'Dr. Disha Datta', value: '/ivf-doctor/dr-disha-datta-choudhury-ivf-specialist' },
           { label: 'Dr. Aiman Akram', value: '/ivf-doctor/dr-aiman-akram-ivf-specialist' },
           { label: 'Dr. Nivedita Nehal', value: '/ivf-doctor/dr-nivedita-nehal-ivf-specialist' },
@@ -399,6 +403,7 @@ const PAGE_TREE = [
       { label: 'Training Registration', value: '/training-academy/training-registration' },
     ],
   },
+  BLOG_PAGE_TREE,
   { label: 'Thank You Page', value: '/thank-you' },
 ];
 
@@ -553,6 +558,7 @@ function getSectionAccentClass(topLevelLabel) {
     Doctors: 'from-sky-400/20 to-transparent text-sky-700',
     'Contact Us': 'from-orange-400/20 to-transparent text-orange-700',
     'Training Academy': 'from-teal-400/20 to-transparent text-teal-700',
+    Blogs: 'from-pink-400/20 to-transparent text-pink-700',
   };
   return accentMap[topLevelLabel] || 'from-zinc-300/30 to-transparent text-zinc-700';
 }
@@ -774,6 +780,8 @@ export default function HomePage() {
     Doctors: true,
     'Contact Us': true,
     'Training Academy': true,
+    Blogs: true,
+    Fertility: true,
     Delhi: true,
     'Uttar Pradesh': true,
   });
