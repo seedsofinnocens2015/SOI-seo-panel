@@ -172,10 +172,6 @@ const PAGE_TREE = [
           { label: 'Endometrial and Ovarian', value: '/reproductive-health-conditions/endometrial-and-ovarian' },
           { label: 'Endometriosis', value: '/reproductive-health-conditions/endometriosis' },
           {
-            label: 'Silent Endometriosis',
-            value: '/reproductive-health-conditions/silent-endometriosis-unexplained-infertility',
-          },
-          {
             label: 'Fibroids, Polyps and Adenomyosis',
             value: '/reproductive-health-conditions/fibroids-polyps-and-adenomyosis',
           },
