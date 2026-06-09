@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import Link from 'next/link';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,7 +20,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="bg-white">
+        {children}
+        <footer className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2 text-center text-[13px] leading-tight text-zinc-500">
+          <p>© 2026 Seeds Of Innocence IVF. All Rights Reserved. Designed &amp; Developed by <Link href="https://amit1999-portfolio.vercel.app/">Amit Kumar</Link></p>
+        </footer>
+      </body>
     </html>
   );
 }

@@ -1231,7 +1231,7 @@ export default function HomePage() {
 
   if (!isHydrated) {
     return (
-      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
+      <main className="grid min-h-[calc(100vh-34px)] place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
           <p className="text-sm font-semibold text-zinc-700">Loading SEO Panel...</p>
         </div>
@@ -1241,7 +1241,7 @@ export default function HomePage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
+      <main className="grid min-h-[calc(100vh-34px)] place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
         <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl">
           <Image
             src="/Header Logo.svg"
@@ -1404,7 +1404,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="h-screen overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
+    <main className="h-[calc(100vh-34px)] overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
       <div className="flex h-full w-full">
         <aside
           className="relative flex h-full shrink-0 flex-col border-r border-zinc-200 bg-gradient-to-b from-white via-white to-zinc-50/70 p-4 shadow-sm backdrop-blur"
