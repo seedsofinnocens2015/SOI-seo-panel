@@ -405,6 +405,10 @@ const PAGE_TREE = [
   },
   BLOG_PAGE_TREE,
   { label: 'Thank You Page', value: '/thank-you' },
+  { label: 'Privacy Policy', value: '/privacy-policy' },
+  { label: 'Terms & Conditions', value: '/terms-and-conditions' },
+  { label: 'Disclaimer', value: '/disclaimer' },
+
 ];
 
 const SEO_FIELDS = [
