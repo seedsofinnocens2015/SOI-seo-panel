@@ -327,7 +327,7 @@ const PAGE_TREE = [
     label: 'About Us',
     children: [
       { label: 'Our Story', value: '/about/our-story' },
-      { label: 'Dr. Gauri Agrawal – Founder', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist/' },
+      // { label: 'Dr. Gauri Agrawal – Founder', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist/' },
       { label: 'Leadership Team', value: '/about/leadership-team' },
       { label: 'Vision, Mission & Values', value: '/about/vision-mission-values' },
       { label: 'Success Rates', value: '/about/success-rates' },
