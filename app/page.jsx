@@ -256,6 +256,7 @@ const PAGE_TREE = [
             children: [
               { label: 'Jharkhand Overview', value: '/best-ivf-centre-in-jharkhand' },
               { label: 'Ranchi', value: '/jharkhand/best-ivf-centre-in-ranchi/' },
+              { label: 'Dhanbad', value: '/jharkhand/best-ivf-centre-in-dhanbad/' },
             ],
           },
           {
