@@ -217,6 +217,7 @@ const PAGE_TREE = [
           {
             label: 'Delhi',
             children: [
+              { label: 'India', value: '/best-ivf-centre-in-india' },
               { label: 'Delhi Overview', value: '/best-ivf-centre-in-delhi' },
               { label: 'Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
               { label: 'Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
@@ -299,6 +300,7 @@ const PAGE_TREE = [
           {
             label: 'International',
             children: [
+              { label: 'India', value: '/best-ivf-centre-in-international' },
               { label: 'International Overview', value: '/ivf-centres/international' },
               { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
             ],
