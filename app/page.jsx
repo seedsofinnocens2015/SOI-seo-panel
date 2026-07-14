@@ -214,10 +214,10 @@ const PAGE_TREE = [
       {
         label: 'India',
         children: [
+          { label: 'India', value: '/best-ivf-centre-in-india' },
           {
             label: 'Delhi',
             children: [
-              { label: 'India', value: '/best-ivf-centre-in-india' },
               { label: 'Delhi Overview', value: '/best-ivf-centre-in-delhi' },
               { label: 'Malviya Nagar, New Delhi', value: '/delhi/best-ivf-centre-in-malviyanagar/' },
               { label: 'Pitampura, New Delhi', value: '/delhi/best-ivf-centre-in-pitampura/' },
@@ -288,7 +288,7 @@ const PAGE_TREE = [
             children: [
               { label: 'J&K Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
               { label: 'Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
-              { label: 'Jammu', href: '/jammu-kashmir/best-ivf-centre-in-jammu/' }
+              { label: 'Jammu', value: '/jammu-kashmir/best-ivf-centre-in-jammu/' }
             ],
           },
           {
