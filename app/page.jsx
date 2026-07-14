@@ -288,6 +288,7 @@ const PAGE_TREE = [
             children: [
               { label: 'J&K Overview', value: '/best-ivf-centre-in-jammu-kashmir' },
               { label: 'Srinagar', value: '/jammu-kashmir/best-ivf-centre-in-srinagar/' },
+              { label: 'Jammu', href: '/jammu-kashmir/best-ivf-centre-in-jammu/' }
             ],
           },
           {
