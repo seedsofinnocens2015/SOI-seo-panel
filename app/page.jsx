@@ -301,8 +301,7 @@ const PAGE_TREE = [
           {
             label: 'International',
             children: [
-              { label: 'India', value: '/best-ivf-centre-in-international' },
-              { label: 'International Overview', value: '/ivf-centres/international' },
+              { label: 'International', value: '/best-ivf-centre-in-international' },
               { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
             ],
           },
