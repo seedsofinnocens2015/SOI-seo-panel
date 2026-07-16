@@ -373,6 +373,7 @@ const PAGE_TREE = [
           { label: 'Dr. Rashmi Singh', value: '/ivf-doctor/dr-rashmi-singh-ivf-specialist' },
           { label: 'Dr. Mangla Kawade', value: '/ivf-doctor/dr-mangla-kawade-ivf-specialist' },
           { label: 'Dr. Manisha', value: '/ivf-doctor/dr-manisha-ivf-specialist/' },
+          { label: 'Dr Sunita Jamwal', value: '/ivf-doctor/dr-sunita-ivf-specialist/' },
         ],
       },
       { label: 'Maternal-Fetal Medicine Specialists', value: '/ivf-doctor/maternal-fetal-medicine' },
