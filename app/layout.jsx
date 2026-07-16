@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'SEO Panel: Seeds of Innocence',
-  description: 'SEO admin panel for Seeds of Innocence Made by Amit Kumar Yadav',
+  title: 'SOI Panel: Seeds of Innocence',
+  description: 'Role-based SEO and HR admin panel for Seeds of Innocence',
 };
 
 export default function RootLayout({ children }) {

@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import SeoForm from './components/SeoForm';
+import HrOpenings from './components/HrOpenings';
+import HrApplications from './components/HrApplications';
+import { fetchManagedJobs } from '../lib/jobApi';
+import { fetchManagedApplications } from '../lib/jobApplicationApi';
 import { fetchSeo, fetchSeoStats, normalizePageUrl, saveSeo } from '../lib/seoApi';
 import {
   clearAuthSession,
@@ -732,6 +736,242 @@ function getUserInitials(name = '') {
 const DASHBOARD_PAGE = '__dashboard__';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
 
+const HR_NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: '▦' },
+  { id: 'employees', label: 'Employees', icon: '👥' },
+  { id: 'attendance', label: 'Attendance', icon: '✓' },
+  { id: 'leave', label: 'Leave Requests', icon: '▣' },
+  { id: 'openings', label: 'Current Openings', icon: '＋' },
+  { id: 'applications', label: 'Applications', icon: '▤' },
+];
+
+function HrPanel({ currentUser, onLogout }) {
+  const [activePage, setActivePage] = useState('dashboard');
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [openingCounts, setOpeningCounts] = useState({ total: 0, published: 0 });
+  const [applicationCounts, setApplicationCounts] = useState({ total: 0, new: 0 });
+  const profileMenuRef = useRef(null);
+  const activeItem = HR_NAV_ITEMS.find((item) => item.id === activePage) || HR_NAV_ITEMS[0];
+  const initials = getUserInitials(currentUser?.name);
+
+  useEffect(() => {
+    function closeProfileMenu(event) {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false);
+        return;
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    if (isProfileMenuOpen) {
+      document.addEventListener('mousedown', closeProfileMenu);
+      document.addEventListener('keydown', closeProfileMenu);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', closeProfileMenu);
+      document.removeEventListener('keydown', closeProfileMenu);
+    };
+  }, [isProfileMenuOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchManagedJobs()
+      .then((rows) => {
+        if (cancelled) return;
+        const jobs = Array.isArray(rows) ? rows : [];
+        setOpeningCounts({
+          total: jobs.length,
+          published: jobs.filter((job) => job.status === 'published').length,
+        });
+      })
+      .catch(() => {
+        // The Current Openings page shows the actionable error state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchManagedApplications()
+      .then((rows) => {
+        if (cancelled) return;
+        const applications = Array.isArray(rows) ? rows : [];
+        setApplicationCounts({
+          total: applications.length,
+          new: applications.filter((item) => item.status === 'new').length,
+        });
+      })
+      .catch(() => {
+        // The Applications page shows the actionable error state.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const pageCopy = {
+    employees: {
+      title: 'Employees',
+      description: 'Employee directory and profile management will live here.',
+    },
+    attendance: {
+      title: 'Attendance',
+      description: 'Daily attendance, working hours and monthly records will live here.',
+    },
+    leave: {
+      title: 'Leave Requests',
+      description: 'Leave applications and approval workflow will live here.',
+    },
+  };
+
+  return (
+    <main className="min-h-[calc(100vh-34px)] bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
+      <div className="flex min-h-[calc(100vh-34px)]">
+        <aside className="w-72 shrink-0 border-r border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-zinc-200 p-3">
+            <Image
+              src="/Header Logo.svg"
+              alt="Seeds of Innocence"
+              width={220}
+              height={68}
+              priority
+              className="h-auto w-auto max-w-[210px]"
+            />
+            <div className="mt-3 inline-flex rounded-full bg-[#df3655]/10 px-3 py-1 text-xs font-bold text-[#c92c49]">
+              HR Panel
+            </div>
+          </div>
+
+          <nav className="mt-5 space-y-2" aria-label="HR navigation">
+            {HR_NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActivePage(item.id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${
+                  activePage === item.id
+                    ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#c92c49] ring-1 ring-[#df3655]/20'
+                    : 'text-zinc-700 hover:bg-zinc-100'
+                }`}
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-white shadow-sm" aria-hidden="true">
+                  {item.icon}
+                </span>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <section className="min-w-0 flex-1 p-6 lg:p-8">
+          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#2EA6F7]">Seeds of Innocence</p>
+              <h1 className="mt-1 text-3xl font-bold text-zinc-900">SOI Human Resource Panel</h1>
+              <p className="mt-1 flex items-center gap-2 text-sm text-zinc-600">
+                HR workspace · {activeItem.label}
+                {currentUser?.role === 'admin' ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                    Full Admin
+                  </span>
+                ) : null}
+              </p>
+            </div>
+            <div ref={profileMenuRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${
+                  isProfileMenuOpen
+                    ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
+                    : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
+                }`}
+                aria-label="Open HR profile menu"
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="menu"
+              >
+                {initials}
+                <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500" />
+              </button>
+
+              {isProfileMenuOpen ? (
+                <div className="absolute right-0 top-14 z-30 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl" role="menu">
+                  <div className="bg-gradient-to-r from-[#f8fbff] via-white to-[#fff3f6] px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Signed in as</p>
+                    <p className="mt-1 text-sm font-bold text-zinc-900">{currentUser?.name || 'HR User'}</p>
+                    <p className="mt-1 break-all text-xs text-zinc-600">{currentUser?.email || 'No email'}</p>
+                    {currentUser?.role === 'admin' ? (
+                      <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                        Full Admin · HR Workspace
+                      </span>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="m-3 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                    role="menuitem"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </header>
+
+          {activePage === 'dashboard' ? (
+            <div className="mt-7">
+              <div className="rounded-3xl bg-gradient-to-r from-[#173a63] to-[#2EA6F7] p-7 text-white shadow-lg">
+                <p className="text-sm font-semibold text-white/80">Welcome back</p>
+                <h2 className="mt-2 text-3xl font-bold">{currentUser?.name || 'HR Team'}</h2>
+                <p className="mt-2 max-w-2xl text-sm text-white/85">
+                  This is your private HR workspace. SEO pages and SEO controls are not available in this account.
+                </p>
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ['Employees', '0', 'Employee records'],
+                  ['Present Today', '0', 'Attendance records'],
+                  ['Leave Requests', '0', 'Pending approvals'],
+                  ['Open Positions', String(openingCounts.published), `${openingCounts.total} total records`],
+                  ['Applications', String(applicationCounts.total), `${applicationCounts.new} new applications`],
+                ].map(([label, value, hint]) => (
+                  <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-zinc-600">{label}</p>
+                    <p className="mt-3 text-3xl font-bold text-zinc-900">{value}</p>
+                    <p className="mt-2 text-xs text-zinc-500">{hint} will appear here.</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : activePage === 'openings' ? (
+            <HrOpenings onCountChange={setOpeningCounts} />
+          ) : activePage === 'applications' ? (
+            <HrApplications onCountChange={setApplicationCounts} />
+          ) : (
+            <div className="mt-7 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#2EA6F7]/10 text-2xl text-[#1c7fbe]">
+                {activeItem.icon}
+              </div>
+              <h2 className="mt-5 text-2xl font-bold text-zinc-900">{pageCopy[activePage].title}</h2>
+              <p className="mt-2 max-w-2xl text-zinc-600">{pageCopy[activePage].description}</p>
+              <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
+                <p className="font-semibold text-zinc-700">No HR records added yet</p>
+                <p className="mt-1 text-sm text-zinc-500">This area is isolated from all existing SEO data.</p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
 function getInitialSelectedPage() {
   if (typeof window === 'undefined') return DASHBOARD_PAGE;
   const savedPage = window.localStorage.getItem(SELECTED_PAGE_STORAGE_KEY);
@@ -752,7 +992,7 @@ export default function HomePage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authInfo, setAuthInfo] = useState('');
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '' });
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '', role: 'seo' });
   const [otpTimer, setOtpTimer] = useState(0);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -795,6 +1035,14 @@ export default function HomePage() {
     Delhi: true,
     'Uttar Pradesh': true,
   });
+  const currentRole =
+    currentUser?.role === 'admin'
+      ? currentUser?.activeRole === 'hr'
+        ? 'hr'
+        : 'seo'
+      : currentUser?.role === 'hr'
+        ? 'hr'
+        : 'seo';
 
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
   const isSectionView = Boolean(selectedSection);
@@ -910,7 +1158,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated || isDashboardView || isSectionView) {
+    if (!isAuthenticated || currentRole !== 'seo' || isDashboardView || isSectionView) {
       return undefined;
     }
 
@@ -966,7 +1214,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, isDashboardView, isSectionView]);
+  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, currentRole, isDashboardView, isSectionView]);
 
   useEffect(() => {
     if (!successMessage) return undefined;
@@ -975,7 +1223,7 @@ export default function HomePage() {
   }, [successMessage]);
 
   useEffect(() => {
-    if (!isAuthenticated || !allPageOptions.length) {
+    if (!isAuthenticated || currentRole !== 'seo' || !allPageOptions.length) {
       return undefined;
     }
 
@@ -1012,7 +1260,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [isAuthenticated, allPageOptions]);
+  }, [isAuthenticated, currentRole, allPageOptions]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1174,6 +1422,7 @@ export default function HomePage() {
       const payload = {
         email: authForm.email.trim(),
         password: authForm.password,
+        role: authForm.role,
       };
 
       const response =
@@ -1190,6 +1439,18 @@ export default function HomePage() {
     }
   }
 
+  function completeAuthentication(authResponse) {
+    saveAuthSession(authResponse);
+    setCurrentUser(authResponse.user || null);
+    setIsAuthenticated(true);
+    setSelectedPage(DASHBOARD_PAGE);
+    setSelectedSection(null);
+    setActiveDashboardList('all');
+    setAuthForm({ name: '', email: '', password: '', otp: '', role: 'seo' });
+    setOtpTimer(0);
+    setAuthStep('credentials');
+  }
+
   async function handleAuthSubmit(event) {
     event.preventDefault();
     setAuthLoading(true);
@@ -1201,13 +1462,22 @@ export default function HomePage() {
         const payload = {
           email: authForm.email.trim(),
           password: authForm.password,
+          role: authForm.role,
         };
 
         if (authMode === 'signup') {
           const response = await requestSignupOtp({ ...payload, name: authForm.name.trim() });
+          if (response?.token) {
+            completeAuthentication(response);
+            return;
+          }
           setOtpTimer(Number(response?.expiresInSeconds) || 60);
         } else {
           const response = await requestLoginOtp(payload);
+          if (response?.token) {
+            completeAuthentication(response);
+            return;
+          }
           setOtpTimer(Number(response?.expiresInSeconds) || 60);
         }
 
@@ -1222,15 +1492,7 @@ export default function HomePage() {
         const authResponse =
           authMode === 'signup' ? await verifySignupOtp(verifyPayload) : await verifyLoginOtp(verifyPayload);
 
-        saveAuthSession(authResponse);
-        setCurrentUser(authResponse.user || null);
-        setIsAuthenticated(true);
-        setSelectedPage(DASHBOARD_PAGE);
-        setSelectedSection(null);
-        setActiveDashboardList('all');
-        setAuthForm({ name: '', email: '', password: '', otp: '' });
-        setOtpTimer(0);
-        setAuthStep('credentials');
+        completeAuthentication(authResponse);
       }
     } catch (error) {
       setAuthError(error.message || 'Authentication failed');
@@ -1243,7 +1505,7 @@ export default function HomePage() {
     return (
       <main className="grid min-h-[calc(100vh-34px)] place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
-          <p className="text-sm font-semibold text-zinc-700">Loading SEO Panel...</p>
+          <p className="text-sm font-semibold text-zinc-700">Loading SOI Panel...</p>
         </div>
       </main>
     );
@@ -1261,7 +1523,7 @@ export default function HomePage() {
             priority
             className="mx-auto h-auto w-auto max-w-[280px]"
           />
-          <h1 className="mt-4 text-center text-3xl font-bold text-zinc-900">SEO Panel Access</h1>
+          <h1 className="mt-4 text-center text-3xl font-bold text-zinc-900">SOI Panel Access</h1>
           <p className="mt-2 text-center text-base text-zinc-600">
             {authStep === 'credentials'
               ? `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
@@ -1306,6 +1568,27 @@ export default function HomePage() {
           </div>
 
           <form className="mx-auto mt-6 w-full max-w-lg space-y-4" onSubmit={handleAuthSubmit}>
+            {authStep === 'credentials' ? (
+              <div>
+                <label htmlFor="role" className="mb-2 block text-sm font-semibold text-zinc-700">
+                  Select your role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={authForm.role}
+                  onChange={handleAuthFieldChange}
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                >
+                  <option value="seo">SEO</option>
+                  <option value="hr">HR</option>
+                </select>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[#2EA6F7]/20 bg-[#2EA6F7]/5 px-4 py-3 text-center text-sm font-semibold text-[#1c7fbe]">
+                Signing in to the {authForm.role.toUpperCase()} panel
+              </div>
+            )}
             {authStep === 'credentials' && authMode === 'signup' ? (
               <input
                 type="text"
@@ -1413,6 +1696,10 @@ export default function HomePage() {
     );
   }
 
+  if (currentRole === 'hr') {
+    return <HrPanel currentUser={currentUser} onLogout={handleLogout} />;
+  }
+
   return (
     <main className="h-[calc(100vh-34px)] overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
       <div className="flex h-full w-full">
@@ -1482,7 +1769,7 @@ export default function HomePage() {
                 <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_minmax(420px,560px)_auto] lg:items-start">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
-                    <h1 className="mt-1 text-2xl font-bold text-zinc-900">SEO Admin Panel</h1>
+                    <h1 className="mt-1 text-2xl font-bold text-zinc-900">SOI Admin Panel</h1>
                     <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
                       {!isDashboardView && !isSectionView ? (
                         <button
@@ -1595,6 +1882,11 @@ export default function HomePage() {
                           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Signed in as</p>
                           <p className="mt-1 text-sm font-bold text-zinc-900">{currentUser?.name || 'User'}</p>
                           <p className="mt-1 text-xs text-zinc-600">{currentUser?.email || 'No email'}</p>
+                          {currentUser?.role === 'admin' ? (
+                            <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                              Full Admin · SEO Workspace
+                            </span>
+                          ) : null}
                         </div>
                         <button
                           type="button"
