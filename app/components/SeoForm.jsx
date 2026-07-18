@@ -117,7 +117,7 @@ function FieldGrid({ fields, formData, onChange }) {
 }
 
 export default function SeoForm({ formData, onChange }) {
-  const sectionClasses = 'rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-5 shadow-sm';
+  const sectionClasses = 'rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 p-3 shadow-sm sm:p-5';
   const headingClasses = 'text-base font-bold text-zinc-900';
 
   const sections = [
@@ -125,7 +125,7 @@ export default function SeoForm({ formData, onChange }) {
       key: 'basic',
       title: 'Basic',
       subtitle: 'Core SEO fields like title, description, canonical and robots.',
-      accent: 'from-[#df3655]/15 to-transparent',
+      accent: 'from-[#cc2727]/15 to-transparent',
       fields: FIELD_GROUPS.basic,
     },
     {

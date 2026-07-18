@@ -131,7 +131,7 @@ export default function HrOpenings({ onCountChange }) {
 
   return (
     <div className="mt-7">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900">Current Openings</h2>
           <p className="mt-1 text-sm text-zinc-600">Published openings appear automatically on the SOI careers page.</p>
@@ -139,7 +139,7 @@ export default function HrOpenings({ onCountChange }) {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-xl bg-[#df3655] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#c92c49]"
+          className="w-full rounded-xl bg-[#cc2727] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#a91f1f] sm:w-auto"
         >
           + Add Opening
         </button>
@@ -149,7 +149,7 @@ export default function HrOpenings({ onCountChange }) {
       {error ? <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
       {isFormOpen ? (
-        <form onSubmit={handleSubmit} className="mt-6 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="mt-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-xl font-bold text-zinc-900">{editingId ? 'Edit Opening' : 'Add New Opening'}</h3>
@@ -192,13 +192,16 @@ export default function HrOpenings({ onCountChange }) {
             </label>
             <label className="text-sm font-semibold text-zinc-700 md:col-span-2">
               Job description
-              <textarea required maxLength={3000} rows={5} value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Describe the role, responsibilities and candidate requirements..." className="mt-2 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 font-normal outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20" />
+              <textarea required maxLength={3000} rows={8} value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} placeholder={'About the role\n\nResponsibilities:\n• First responsibility\n• Second responsibility\n\nRequirements:\n1. First requirement\n2. Second requirement'} className="mt-2 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 font-normal leading-6 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20" />
+              <span className="mt-2 block text-xs font-normal leading-5 text-zinc-500">
+                Formatting is preserved on the website. Use Enter for new lines and •, -, or numbers for points.
+              </span>
             </label>
           </div>
 
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <button type="button" onClick={closeForm} className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-bold text-zinc-700 hover:bg-zinc-100">Cancel</button>
-            <button disabled={saving} type="submit" className="rounded-xl bg-[#df3655] px-5 py-3 text-sm font-bold text-white hover:bg-[#c92c49] disabled:opacity-60">{saving ? 'Saving...' : editingId ? 'Update Opening' : 'Publish Opening'}</button>
+            <button disabled={saving} type="submit" className="rounded-xl bg-[#cc2727] px-5 py-3 text-sm font-bold text-white hover:bg-[#a91f1f] disabled:opacity-60">{saving ? 'Saving...' : editingId ? 'Update Opening' : 'Publish Opening'}</button>
           </div>
         </form>
       ) : null}
@@ -215,21 +218,21 @@ export default function HrOpenings({ onCountChange }) {
           <div className="grid gap-4 xl:grid-cols-2">
             {jobs.map((job) => (
               <article key={job._id} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-[#df3655]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#c92c49]">{job.jobField}</span>
+                      <span className="rounded-full bg-[#cc2727]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#cc2727]">{job.jobField}</span>
                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${job.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-600'}`}>{job.status}</span>
                     </div>
                     <h3 className="mt-3 text-lg font-bold text-zinc-900">{job.title}</h3>
                     <p className="mt-1 text-sm text-zinc-500">{job.location} · {job.employmentType} · {job.experience}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => openEditForm(job)} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100">Edit</button>
-                    <button type="button" onClick={() => handleDelete(job)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Delete</button>
+                  <div className="flex w-full gap-2 sm:w-auto">
+                    <button type="button" onClick={() => openEditForm(job)} className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 sm:flex-none">Edit</button>
+                    <button type="button" onClick={() => handleDelete(job)} className="flex-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 sm:flex-none">Delete</button>
                   </div>
                 </div>
-                <p className="mt-4 line-clamp-3 text-sm leading-6 text-zinc-600">{job.description}</p>
+                <p className="mt-4 line-clamp-5 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-600">{job.description}</p>
               </article>
             ))}
           </div>

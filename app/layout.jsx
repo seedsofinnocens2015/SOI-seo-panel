@@ -20,10 +20,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="bg-white">
+      <body className="flex h-dvh flex-col overflow-hidden bg-white">
         {children}
-        <footer className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2 text-center text-[13px] leading-tight text-zinc-500">
-          <p>© 2026 Seeds Of Innocence IVF. All Rights Reserved. Designed &amp; Developed by <Link href="https://amit1999-portfolio.vercel.app/">Amit Kumar</Link></p>
+        <footer className="relative z-40 shrink-0 border-t border-[#b51f1f] bg-[#cc2727] px-2 py-1.5 text-center text-[11px] leading-snug text-white sm:px-3 sm:py-2 sm:text-[15px] sm:leading-tight">
+          <p>© 2026 <Link href="https://www.seedsofinnocens.com/" className="font-bold text-white hover:text-white/80">Seeds Of Innocence IVF</Link>. All Rights Reserved. Designed &amp; Developed by <Link href="https://amit1999-portfolio.vercel.app/" className="border-b border-white/80 font-bold text-white hover:text-white/80">Amit Kumar</Link></p>
         </footer>
       </body>
     </html>

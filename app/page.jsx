@@ -5,6 +5,7 @@ import Image from 'next/image';
 import SeoForm from './components/SeoForm';
 import HrOpenings from './components/HrOpenings';
 import HrApplications from './components/HrApplications';
+import PanelUsers from './components/PanelUsers';
 import { fetchManagedJobs } from '../lib/jobApi';
 import { fetchManagedApplications } from '../lib/jobApplicationApi';
 import { fetchSeo, fetchSeoStats, normalizePageUrl, saveSeo } from '../lib/seoApi';
@@ -13,7 +14,9 @@ import {
   getAuthToken,
   getStoredUser,
   requestLoginOtp,
+  requestPasswordResetOtp,
   requestSignupOtp,
+  resetPasswordWithOtp,
   saveAuthSession,
   verifyLoginOtp,
   verifySignupOtp,
@@ -653,7 +656,7 @@ function SidebarNode({
             type="button"
             onClick={() => onSelect(node.value)}
             className={`w-full rounded-lg px-2.5 py-1.5 text-left text-sm ${isSelected
-              ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 font-semibold text-[#df3655] ring-1 ring-[#df3655]/20'
+              ? 'bg-gradient-to-r from-[#cc2727]/15 to-[#cc2727]/5 font-semibold text-[#cc2727] ring-1 ring-[#cc2727]/20'
               : 'text-zinc-700 transition hover:bg-zinc-100/80'
               }`}
             title={node.value}
@@ -667,7 +670,7 @@ function SidebarNode({
               onSelectSection(node, parentTrail);
               if (!disableExpand && !isExpanded) onToggle(nodeKey);
             }}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left transition ${accentClass} ${isSectionSelected ? 'ring-2 ring-[#df3655]/40 shadow-sm' : 'hover:brightness-95'
+            className={`flex w-full cursor-pointer items-center justify-between rounded-lg bg-gradient-to-r px-2.5 py-1.5 text-left transition ${accentClass} ${isSectionSelected ? 'ring-2 ring-[#cc2727]/40 shadow-sm' : 'hover:brightness-95'
               }`}
             title="Click to view all pages in this section"
           >
@@ -735,12 +738,12 @@ function getUserInitials(name = '') {
 
 const DASHBOARD_PAGE = '__dashboard__';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
+const AUTH_BACKGROUND_STYLE = {
+  backgroundImage: "linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)), url('/banner.webp')",
+};
 
 const HR_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '▦' },
-  { id: 'employees', label: 'Employees', icon: '👥' },
-  { id: 'attendance', label: 'Attendance', icon: '✓' },
-  { id: 'leave', label: 'Leave Requests', icon: '▣' },
   { id: 'openings', label: 'Current Openings', icon: '＋' },
   { id: 'applications', label: 'Applications', icon: '▤' },
 ];
@@ -748,6 +751,8 @@ const HR_NAV_ITEMS = [
 function HrPanel({ currentUser, onLogout }) {
   const [activePage, setActivePage] = useState('dashboard');
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isPanelUsersOpen, setIsPanelUsersOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [openingCounts, setOpeningCounts] = useState({ total: 0, published: 0 });
   const [applicationCounts, setApplicationCounts] = useState({ total: 0, new: 0 });
   const profileMenuRef = useRef(null);
@@ -775,6 +780,15 @@ function HrPanel({ currentUser, onLogout }) {
       document.removeEventListener('keydown', closeProfileMenu);
     };
   }, [isProfileMenuOpen]);
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return undefined;
+    function closeMobileSidebar(event) {
+      if (event.key === 'Escape') setIsMobileSidebarOpen(false);
+    }
+    document.addEventListener('keydown', closeMobileSidebar);
+    return () => document.removeEventListener('keydown', closeMobileSidebar);
+  }, [isMobileSidebarOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -814,35 +828,19 @@ function HrPanel({ currentUser, onLogout }) {
     };
   }, []);
 
-  const pageCopy = {
-    employees: {
-      title: 'Employees',
-      description: 'Employee directory and profile management will live here.',
-    },
-    attendance: {
-      title: 'Attendance',
-      description: 'Daily attendance, working hours and monthly records will live here.',
-    },
-    leave: {
-      title: 'Leave Requests',
-      description: 'Leave applications and approval workflow will live here.',
-    },
-  };
-
   return (
-    <main className="min-h-[calc(100vh-34px)] bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
-      <div className="flex min-h-[calc(100vh-34px)]">
-        <aside className="w-72 shrink-0 border-r border-zinc-200 bg-white p-4 shadow-sm">
+    <main className="min-h-0 flex-1 overflow-y-auto bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
+      <div className="flex min-h-full">
+        {isMobileSidebarOpen ? (
+          <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] lg:hidden" aria-label="Close HR navigation" />
+        ) : null}
+        <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-[min(88vw,340px)] shrink-0 flex-col border-r border-zinc-200 bg-gradient-to-b from-white via-white to-zinc-50/70 p-4 shadow-xl transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:w-72 lg:translate-x-0 lg:shadow-sm ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="rounded-2xl border border-zinc-200 p-3">
-            <Image
-              src="/Header Logo.svg"
-              alt="Seeds of Innocence"
-              width={220}
-              height={68}
-              priority
-              className="h-auto w-auto max-w-[210px]"
-            />
-            <div className="mt-3 inline-flex rounded-full bg-[#df3655]/10 px-3 py-1 text-xs font-bold text-[#c92c49]">
+            <div className="flex items-start justify-between gap-3">
+              <Image src="/Header Logo.svg" alt="Seeds of Innocence" width={220} height={68} priority className="h-auto w-auto max-w-[190px]" />
+              <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 lg:hidden" aria-label="Close HR navigation">✕</button>
+            </div>
+            <div className="mt-3 inline-flex rounded-full bg-[#cc2727]/10 px-3 py-1 text-xs font-bold text-[#cc2727]">
               HR Panel
             </div>
           </div>
@@ -852,10 +850,13 @@ function HrPanel({ currentUser, onLogout }) {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActivePage(item.id)}
+                onClick={() => {
+                  setActivePage(item.id);
+                  setIsMobileSidebarOpen(false);
+                }}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${
                   activePage === item.id
-                    ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#c92c49] ring-1 ring-[#df3655]/20'
+                    ? 'bg-gradient-to-r from-[#cc2727]/15 to-[#cc2727]/5 text-[#cc2727] ring-1 ring-[#cc2727]/20'
                     : 'text-zinc-700 hover:bg-zinc-100'
                 }`}
               >
@@ -868,12 +869,14 @@ function HrPanel({ currentUser, onLogout }) {
           </nav>
         </aside>
 
-        <section className="min-w-0 flex-1 p-6 lg:p-8">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-            <div>
+        <section className="min-w-0 flex-1 p-3 sm:p-6 lg:p-8">
+          <header className="flex items-start justify-between gap-3 border-b border-zinc-200 pb-4 sm:gap-4 sm:pb-5">
+            <div className="flex min-w-0 items-start gap-3">
+              <button type="button" onClick={() => setIsMobileSidebarOpen(true)} className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-zinc-300 bg-white text-lg text-zinc-700 shadow-sm lg:hidden" aria-label="Open HR navigation">☰</button>
+              <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#2EA6F7]">Seeds of Innocence</p>
-              <h1 className="mt-1 text-3xl font-bold text-zinc-900">SOI Human Resource Panel</h1>
-              <p className="mt-1 flex items-center gap-2 text-sm text-zinc-600">
+              <h1 className="mt-1 text-xl font-bold text-zinc-900 sm:text-3xl">SOI Human Resource Panel</h1>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-600 sm:text-sm">
                 HR workspace · {activeItem.label}
                 {currentUser?.role === 'admin' ? (
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
@@ -881,6 +884,7 @@ function HrPanel({ currentUser, onLogout }) {
                   </span>
                 ) : null}
               </p>
+              </div>
             </div>
             <div ref={profileMenuRef} className="relative shrink-0">
               <button
@@ -888,7 +892,7 @@ function HrPanel({ currentUser, onLogout }) {
                 onClick={() => setIsProfileMenuOpen((prev) => !prev)}
                 className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${
                   isProfileMenuOpen
-                    ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
+                    ? 'border-[#cc2727]/40 from-[#cc2727] to-[#e45a5a] ring-4 ring-[#cc2727]/20'
                     : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
                 }`}
                 aria-label="Open HR profile menu"
@@ -900,7 +904,7 @@ function HrPanel({ currentUser, onLogout }) {
               </button>
 
               {isProfileMenuOpen ? (
-                <div className="absolute right-0 top-14 z-30 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl" role="menu">
+                <div className="absolute right-0 top-14 z-30 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl" role="menu">
                   <div className="bg-gradient-to-r from-[#f8fbff] via-white to-[#fff3f6] px-4 py-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Signed in as</p>
                     <p className="mt-1 text-sm font-bold text-zinc-900">{currentUser?.name || 'HR User'}</p>
@@ -913,8 +917,19 @@ function HrPanel({ currentUser, onLogout }) {
                   </div>
                   <button
                     type="button"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      setIsPanelUsersOpen(true);
+                    }}
+                    className="mx-3 mt-3 w-[calc(100%-24px)] rounded-xl border border-[#2EA6F7]/30 bg-blue-50 px-3 py-2 text-sm font-semibold text-[#1679b9] transition hover:bg-blue-100"
+                    role="menuitem"
+                  >
+                    Panel Users
+                  </button>
+                  <button
+                    type="button"
                     onClick={onLogout}
-                    className="m-3 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                    className="m-3 mt-2 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                     role="menuitem"
                   >
                     Logout
@@ -926,25 +941,22 @@ function HrPanel({ currentUser, onLogout }) {
 
           {activePage === 'dashboard' ? (
             <div className="mt-7">
-              <div className="rounded-3xl bg-gradient-to-r from-[#173a63] to-[#2EA6F7] p-7 text-white shadow-lg">
+              <div className="rounded-3xl bg-gradient-to-r from-[#173a63] to-[#2EA6F7] p-5 text-white shadow-lg sm:p-7">
                 <p className="text-sm font-semibold text-white/80">Welcome back</p>
-                <h2 className="mt-2 text-3xl font-bold">{currentUser?.name || 'HR Team'}</h2>
+                <h2 className="mt-2 text-2xl font-bold sm:text-3xl">{currentUser?.name || 'HR Team'}</h2>
                 <p className="mt-2 max-w-2xl text-sm text-white/85">
-                  This is your private HR workspace. SEO pages and SEO controls are not available in this account.
+                  This is your private HR workspace.
                 </p>
               </div>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-6 grid max-w-3xl gap-4 sm:grid-cols-2">
                 {[
-                  ['Employees', '0', 'Employee records'],
-                  ['Present Today', '0', 'Attendance records'],
-                  ['Leave Requests', '0', 'Pending approvals'],
                   ['Open Positions', String(openingCounts.published), `${openingCounts.total} total records`],
                   ['Applications', String(applicationCounts.total), `${applicationCounts.new} new applications`],
                 ].map(([label, value, hint]) => (
                   <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                     <p className="text-sm font-semibold text-zinc-600">{label}</p>
                     <p className="mt-3 text-3xl font-bold text-zinc-900">{value}</p>
-                    <p className="mt-2 text-xs text-zinc-500">{hint} will appear here.</p>
+                    <p className="mt-2 text-xs text-zinc-500">{hint}</p>
                   </div>
                 ))}
               </div>
@@ -953,21 +965,10 @@ function HrPanel({ currentUser, onLogout }) {
             <HrOpenings onCountChange={setOpeningCounts} />
           ) : activePage === 'applications' ? (
             <HrApplications onCountChange={setApplicationCounts} />
-          ) : (
-            <div className="mt-7 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#2EA6F7]/10 text-2xl text-[#1c7fbe]">
-                {activeItem.icon}
-              </div>
-              <h2 className="mt-5 text-2xl font-bold text-zinc-900">{pageCopy[activePage].title}</h2>
-              <p className="mt-2 max-w-2xl text-zinc-600">{pageCopy[activePage].description}</p>
-              <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-                <p className="font-semibold text-zinc-700">No HR records added yet</p>
-                <p className="mt-1 text-sm text-zinc-500">This area is isolated from all existing SEO data.</p>
-              </div>
-            </div>
-          )}
+          ) : null}
         </section>
       </div>
+      {isPanelUsersOpen ? <PanelUsers panelRole="hr" currentUser={currentUser} onClose={() => setIsPanelUsersOpen(false)} /> : null}
     </main>
   );
 }
@@ -992,9 +993,11 @@ export default function HomePage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authInfo, setAuthInfo] = useState('');
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '', role: 'seo' });
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', confirmPassword: '', otp: '', role: 'seo' });
   const [otpTimer, setOtpTimer] = useState(0);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPanelUsersOpen, setIsPanelUsersOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const userMenuRef = useRef(null);
   const [selectedPage, setSelectedPage] = useState(getInitialSelectedPage);
   const [selectedSection, setSelectedSection] = useState(null);
@@ -1118,6 +1121,7 @@ export default function HomePage() {
     setPreviousSection(selectedSection || deriveParentSection(value));
     setSelectedPage(value);
     setSelectedSection(null);
+    setIsMobileSidebarOpen(false);
   }
 
   function handleSelectSection(node, parentTrail) {
@@ -1125,6 +1129,7 @@ export default function HomePage() {
     setPreviousSection(null);
     setSuccessMessage('');
     setErrorMessage('');
+    setIsMobileSidebarOpen(false);
   }
 
   function handleOpenDashboard() {
@@ -1132,6 +1137,7 @@ export default function HomePage() {
     setSelectedSection(null);
     setPreviousSection(null);
     setActiveDashboardList('all');
+    setIsMobileSidebarOpen(false);
   }
 
   function handleSelectFromSearch(item) {
@@ -1140,7 +1146,17 @@ export default function HomePage() {
     setSelectedSection(null);
     setSearchText(item.value);
     setShowSearchResults(false);
+    setIsMobileSidebarOpen(false);
   }
+
+  useEffect(() => {
+    if (!isMobileSidebarOpen) return undefined;
+    function closeMobileSidebar(event) {
+      if (event.key === 'Escape') setIsMobileSidebarOpen(false);
+    }
+    document.addEventListener('keydown', closeMobileSidebar);
+    return () => document.removeEventListener('keydown', closeMobileSidebar);
+  }, [isMobileSidebarOpen]);
 
   function handleGoBackFromForm() {
     if (previousSection) {
@@ -1425,8 +1441,9 @@ export default function HomePage() {
         role: authForm.role,
       };
 
-      const response =
-        authMode === 'signup'
+      const response = authMode === 'forgot'
+        ? await requestPasswordResetOtp({ email: authForm.email.trim() })
+        : authMode === 'signup'
           ? await requestSignupOtp({ ...payload, name: authForm.name.trim() })
           : await requestLoginOtp(payload);
 
@@ -1446,7 +1463,7 @@ export default function HomePage() {
     setSelectedPage(DASHBOARD_PAGE);
     setSelectedSection(null);
     setActiveDashboardList('all');
-    setAuthForm({ name: '', email: '', password: '', otp: '', role: 'seo' });
+    setAuthForm({ name: '', email: '', password: '', confirmPassword: '', otp: '', role: 'seo' });
     setOtpTimer(0);
     setAuthStep('credentials');
   }
@@ -1458,6 +1475,31 @@ export default function HomePage() {
     setAuthInfo('');
 
     try {
+      if (authMode === 'forgot') {
+        if (authStep === 'credentials') {
+          const response = await requestPasswordResetOtp({ email: authForm.email.trim() });
+          setOtpTimer(Number(response?.expiresInSeconds) || 60);
+          setAuthStep('otp');
+          setAuthInfo('Password reset OTP sent to your email. OTP is valid for 1 minute.');
+        } else {
+          if (authForm.password !== authForm.confirmPassword) {
+            throw new Error('New password and confirm password do not match');
+          }
+          await resetPasswordWithOtp({
+            email: authForm.email.trim(),
+            otp: authForm.otp.trim(),
+            password: authForm.password,
+          });
+          setAuthMode('login');
+          setAuthStep('credentials');
+          setOtpTimer(0);
+          setShowPassword(false);
+          setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
+          setAuthInfo('Password reset successfully. Please login with your new password.');
+        }
+        return;
+      }
+
       if (authStep === 'credentials') {
         const payload = {
           email: authForm.email.trim(),
@@ -1503,7 +1545,7 @@ export default function HomePage() {
 
   if (!isHydrated) {
     return (
-      <main className="grid min-h-[calc(100vh-34px)] place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
+      <main style={AUTH_BACKGROUND_STYLE} className="grid min-h-0 flex-1 place-items-center overflow-y-auto bg-cover bg-center bg-no-repeat p-3 sm:p-4">
         <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl">
           <p className="text-sm font-semibold text-zinc-700">Loading SOI Panel...</p>
         </div>
@@ -1513,25 +1555,29 @@ export default function HomePage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="grid min-h-[calc(100vh-34px)] place-items-center bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9] p-4">
-        <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl">
+      <main style={AUTH_BACKGROUND_STYLE} className="grid min-h-0 flex-1 place-items-center overflow-y-auto bg-cover bg-center bg-no-repeat p-3 sm:p-4">
+        <div className="w-full max-w-xl p-2 sm:p-4">
           <Image
             src="/Header Logo.svg"
             alt="Seeds of Innocence"
             width={280}
             height={86}
             priority
-            className="mx-auto h-auto w-auto max-w-[280px]"
+            className="mx-auto h-auto w-auto max-w-[220px] drop-shadow-lg sm:max-w-[280px]"
           />
-          <h1 className="mt-4 text-center text-3xl font-bold text-zinc-900">SOI Panel Access</h1>
-          <p className="mt-2 text-center text-base text-zinc-600">
+          <h1 className="mt-4 text-center text-2xl font-bold text-white drop-shadow-md sm:text-3xl">SOI Panel Access</h1>
+          <p className="mt-2 text-center text-base font-medium text-white/90 drop-shadow-sm">
             {authStep === 'credentials'
-              ? `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
-              : 'Enter OTP sent to your email to continue.'}
+              ? authMode === 'forgot'
+                ? 'Enter your registered email to reset your password.'
+                : `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
+              : authMode === 'forgot'
+                ? 'Enter the OTP and create your new password.'
+                : 'Enter OTP sent to your email to continue.'}
           </p>
 
-          <div className="mt-5 flex justify-center">
-            <div className="inline-flex rounded-xl bg-zinc-100 p-1.5">
+          {authMode !== 'forgot' ? <div className="mt-5 flex justify-center">
+            <div className="inline-flex rounded-xl bg-black/35 p-1.5 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => {
@@ -1541,9 +1587,9 @@ export default function HomePage() {
                   setOtpTimer(0);
                   setAuthError('');
                   setAuthInfo('');
-                  setAuthForm((prev) => ({ ...prev, otp: '' }));
+                  setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
                 }}
-                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'login' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'login' ? 'bg-[#cc2727] text-white shadow-sm' : 'text-white/85'
                   }`}
               >
                 Login
@@ -1557,20 +1603,24 @@ export default function HomePage() {
                   setOtpTimer(0);
                   setAuthError('');
                   setAuthInfo('');
-                  setAuthForm((prev) => ({ ...prev, otp: '' }));
+                  setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
                 }}
-                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'signup' ? 'bg-white text-[#df3655] shadow-sm' : 'text-zinc-600'
+                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'signup' ? 'bg-[#cc2727] text-white shadow-sm' : 'text-white/85'
                   }`}
               >
                 Signup
               </button>
             </div>
-          </div>
+          </div> : (
+            <div className="mt-5 flex justify-center">
+              <span className="rounded-full bg-black/35 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">Password Recovery</span>
+            </div>
+          )}
 
           <form className="mx-auto mt-6 w-full max-w-lg space-y-4" onSubmit={handleAuthSubmit}>
-            {authStep === 'credentials' ? (
+            {authStep === 'credentials' && authMode !== 'forgot' ? (
               <div>
-                <label htmlFor="role" className="mb-2 block text-sm font-semibold text-zinc-700">
+                <label htmlFor="role" className="mb-2 block text-sm font-semibold text-white drop-shadow-sm">
                   Select your role
                 </label>
                 <select
@@ -1578,17 +1628,17 @@ export default function HomePage() {
                   name="role"
                   value={authForm.role}
                   onChange={handleAuthFieldChange}
-                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                  className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
                 >
                   <option value="seo">SEO</option>
                   <option value="hr">HR</option>
                 </select>
               </div>
-            ) : (
-              <div className="rounded-xl border border-[#2EA6F7]/20 bg-[#2EA6F7]/5 px-4 py-3 text-center text-sm font-semibold text-[#1c7fbe]">
-                Signing in to the {authForm.role.toUpperCase()} panel
+            ) : authStep === 'otp' ? (
+              <div className="rounded-xl bg-black/35 px-4 py-3 text-center text-sm font-semibold text-white backdrop-blur-sm">
+                {authMode === 'forgot' ? 'Secure password reset verification' : `Signing in to the ${authForm.role.toUpperCase()} panel`}
               </div>
-            )}
+            ) : null}
             {authStep === 'credentials' && authMode === 'signup' ? (
               <input
                 type="text"
@@ -1596,7 +1646,7 @@ export default function HomePage() {
                 value={authForm.name}
                 onChange={handleAuthFieldChange}
                 placeholder="Full name"
-                className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
               />
             ) : null}
             <input
@@ -1605,10 +1655,11 @@ export default function HomePage() {
               value={authForm.email}
               onChange={handleAuthFieldChange}
               placeholder="Email"
+              required
               disabled={authStep === 'otp'}
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20 disabled:cursor-not-allowed disabled:bg-zinc-100"
+              className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7] disabled:cursor-not-allowed disabled:bg-white/80"
             />
-            {authStep === 'credentials' ? (
+            {authStep === 'credentials' && authMode !== 'forgot' ? (
               <div>
                 <div className="relative">
                   <input
@@ -1617,7 +1668,10 @@ export default function HomePage() {
                     value={authForm.password}
                     onChange={handleAuthFieldChange}
                     placeholder="Password"
-                    className="w-full rounded-xl border border-zinc-300 px-4 py-3 pr-12 text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                    required
+                    minLength={10}
+                    maxLength={128}
+                    className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 pr-12 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
                   />
                   <button
                     type="button"
@@ -1629,11 +1683,11 @@ export default function HomePage() {
                     {showPassword ? '🙈' : '👀'}
                   </button>
                 </div>
-                <p className="mt-2 text-center text-sm text-zinc-500">Password minimum 10 characters hona chahiye.</p>
+                {authMode === 'signup' ? <p className="mt-2 text-center text-sm font-medium text-white/90 drop-shadow-sm">Password minimum 10 characters.</p> : null}
               </div>
-            ) : (
-              <div>
-                <p className="mb-2 text-center text-sm font-semibold text-zinc-600">
+            ) : authStep === 'otp' ? (
+              <div className="space-y-4">
+                <p className="mb-2 text-center text-sm font-semibold text-white drop-shadow-sm">
                   OTP Timer: 00:{String(otpTimer).padStart(2, '0')}
                 </p>
                 <input
@@ -1643,18 +1697,75 @@ export default function HomePage() {
                   onChange={handleAuthFieldChange}
                   placeholder="Enter 4-digit OTP"
                   maxLength={4}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-center text-base text-zinc-800 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
+                  required
+                  inputMode="numeric"
+                  className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-center text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
                 />
+                {authMode === 'forgot' ? (
+                  <>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={authForm.password}
+                        onChange={handleAuthFieldChange}
+                        placeholder="New password"
+                        required
+                        minLength={10}
+                        maxLength={128}
+                        autoComplete="new-password"
+                        className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 pr-16 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
+                      />
+                      <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute inset-y-0 right-3 text-xs font-bold text-[#1679b9]" aria-label={showPassword ? 'Hide new passwords' : 'Show new passwords'}>{showPassword ? 'Hide' : 'Show'}</button>
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={authForm.confirmPassword}
+                      onChange={handleAuthFieldChange}
+                      placeholder="Confirm new password"
+                      required
+                      minLength={10}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
+                    />
+                    <p className="text-center text-xs font-medium text-white/90 drop-shadow-sm">New password must contain at least 10 characters.</p>
+                  </>
+                ) : null}
               </div>
-            )}
+            ) : null}
+            {authMode === 'login' && authStep === 'credentials' ? (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('forgot');
+                    setAuthStep('credentials');
+                    setShowPassword(false);
+                    setOtpTimer(0);
+                    setAuthError('');
+                    setAuthInfo('');
+                    setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
+                  }}
+                  className="text-sm font-bold text-white drop-shadow-sm hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            ) : null}
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full rounded-xl bg-[#df3655] px-4 py-3 text-base font-semibold text-white transition hover:bg-[#c92c49] disabled:opacity-60"
+              className="w-full rounded-xl bg-[#cc2727] px-4 py-3 text-base font-semibold text-white transition hover:bg-[#a91f1f] disabled:opacity-60"
             >
               {authLoading
                 ? 'Please wait...'
-                : authStep === 'credentials'
+                : authMode === 'forgot'
+                  ? authStep === 'credentials'
+                    ? 'Send Password Reset OTP'
+                    : 'Verify OTP & Reset Password'
+                  : authStep === 'credentials'
                   ? authMode === 'signup'
                     ? 'Send OTP for Signup'
                     : 'Send OTP for Login'
@@ -1662,13 +1773,29 @@ export default function HomePage() {
                     ? 'Verify OTP and Create Account'
                     : 'Verify OTP and Login'}
             </button>
+            {authMode === 'forgot' && authStep === 'credentials' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthStep('credentials');
+                  setShowPassword(false);
+                  setAuthError('');
+                  setAuthInfo('');
+                  setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
+                }}
+                className="w-full rounded-xl bg-black/35 px-4 py-3 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+              >
+                Back to Login
+              </button>
+            ) : null}
             {authStep === 'otp' ? (
               <div className="space-y-2">
                 <button
                   type="button"
                   onClick={handleResendOtp}
                   disabled={authLoading || otpTimer > 0}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-black/35 px-4 py-3 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-black/50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {otpTimer > 0 ? `Resend OTP in 00:${String(otpTimer).padStart(2, '0')}` : 'Resend OTP'}
                 </button>
@@ -1681,7 +1808,7 @@ export default function HomePage() {
                     setAuthInfo('');
                     setAuthForm((prev) => ({ ...prev, otp: '' }));
                   }}
-                  className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-base font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                  className="w-full rounded-xl bg-black/35 px-4 py-3 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
                 >
                   Back
                 </button>
@@ -1689,8 +1816,8 @@ export default function HomePage() {
             ) : null}
           </form>
 
-          {authInfo ? <p className="mt-4 text-center text-sm text-green-700">{authInfo}</p> : null}
-          {authError ? <p className="mt-4 text-center text-sm text-red-600">{authError}</p> : null}
+          {authInfo ? <p className="mt-4 rounded-xl bg-emerald-950/60 px-4 py-3 text-center text-sm font-semibold text-emerald-100 backdrop-blur-sm">{authInfo}</p> : null}
+          {authError ? <p className="mt-4 rounded-xl bg-red-950/65 px-4 py-3 text-center text-sm font-semibold text-red-100 backdrop-blur-sm">{authError}</p> : null}
         </div>
       </main>
     );
@@ -1701,21 +1828,20 @@ export default function HomePage() {
   }
 
   return (
-    <main className="h-[calc(100vh-34px)] overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
+    <main className="min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
       <div className="flex h-full w-full">
+        {isMobileSidebarOpen ? (
+          <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] lg:hidden" aria-label="Close SEO navigation" />
+        ) : null}
         <aside
-          className="relative flex h-full shrink-0 flex-col border-r border-zinc-200 bg-gradient-to-b from-white via-white to-zinc-50/70 p-4 shadow-sm backdrop-blur"
-          style={{ width: `${sidebarWidth}px` }}
+          className={`fixed inset-y-0 left-0 z-50 flex h-full w-[min(88vw,340px)] shrink-0 flex-col border-r border-zinc-200 bg-gradient-to-b from-white via-white to-zinc-50/70 p-4 shadow-xl backdrop-blur transition-transform duration-200 lg:relative lg:z-auto lg:w-[var(--desktop-sidebar-width)] lg:translate-x-0 lg:shadow-sm ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          style={{ '--desktop-sidebar-width': `${sidebarWidth}px` }}
         >
           <div className="shrink-0 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
-            <Image
-              src="/Header Logo.svg"
-              alt="Seeds of Innocence"
-              width={220}
-              height={68}
-              priority
-              className="h-auto w-auto max-w-[210px]"
-            />
+            <div className="flex items-start justify-between gap-3">
+              <Image src="/Header Logo.svg" alt="Seeds of Innocence" width={220} height={68} priority className="h-auto w-auto max-w-[190px]" />
+              <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 lg:hidden" aria-label="Close SEO navigation">✕</button>
+            </div>
             <p className="mt-2 text-xs text-zinc-500">Select a page path to edit SEO details.</p>
             <div className="mt-3 inline-flex items-center rounded-full bg-[#2EA6F7]/10 px-2.5 py-1 text-[11px] font-semibold text-[#1c7fbe]">
               Total Pages: {allPageOptions.length}
@@ -1729,7 +1855,7 @@ export default function HomePage() {
                   type="button"
                   onClick={handleOpenDashboard}
                   className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${isDashboardView
-                    ? 'bg-gradient-to-r from-[#df3655]/15 to-[#df3655]/5 text-[#df3655] ring-1 ring-[#df3655]/20'
+                    ? 'bg-gradient-to-r from-[#cc2727]/15 to-[#cc2727]/5 text-[#cc2727] ring-1 ring-[#cc2727]/20'
                     : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
                     }`}
                 >
@@ -1755,27 +1881,29 @@ export default function HomePage() {
           <button
             type="button"
             onMouseDown={startSidebarResize}
-            className={`absolute right-0 top-0 h-full w-2 translate-x-1/2 cursor-col-resize rounded-full transition ${isResizingSidebar ? 'bg-[#2EA6F7]/30' : 'bg-transparent hover:bg-[#2EA6F7]/20'
+            className={`absolute right-0 top-0 hidden h-full w-2 translate-x-1/2 cursor-col-resize rounded-full transition lg:block ${isResizingSidebar ? 'bg-[#2EA6F7]/30' : 'bg-transparent hover:bg-[#2EA6F7]/20'
               }`}
             title="Drag to resize sidebar"
             aria-label="Resize sidebar"
           />
         </aside>
 
-        <div className="h-full flex-1 overflow-y-auto">
-          <div className="mx-auto h-full w-full max-w-[1200px] p-6">
-            <div className="flex h-full flex-col bg-white p-6">
-              <div className="shrink-0 border-b border-zinc-100 pb-4">
+        <div className="h-full min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto h-full w-full max-w-[1200px] p-2 sm:p-4 lg:p-6">
+            <div className="flex min-h-full flex-col rounded-2xl bg-white p-3 sm:p-5 lg:h-full lg:p-6">
+              <div className="relative shrink-0 border-b border-zinc-100 pb-4">
                 <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[1fr_minmax(420px,560px)_auto] lg:items-start">
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-start gap-3 pr-14 lg:pr-0">
+                    <button type="button" onClick={() => setIsMobileSidebarOpen(true)} className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-zinc-300 bg-white text-lg text-zinc-700 shadow-sm lg:hidden" aria-label="Open SEO navigation">☰</button>
+                    <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
-                    <h1 className="mt-1 text-2xl font-bold text-zinc-900">SOI Admin Panel</h1>
+                    <h1 className="mt-1 text-xl font-bold text-zinc-900 sm:text-2xl">SOI Admin Panel</h1>
                     <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
                       {!isDashboardView && !isSectionView ? (
                         <button
                           type="button"
                           onClick={handleGoBackFromForm}
-                          className="inline-grid h-7 w-7 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-600 shadow-sm transition hover:border-[#df3655]/40 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                          className="inline-grid h-7 w-7 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-600 shadow-sm transition hover:border-[#cc2727]/40 hover:bg-[#cc2727]/5 hover:text-[#cc2727]"
                           title={
                             previousSection
                               ? `Back to ${previousSection.node.label}`
@@ -1819,6 +1947,7 @@ export default function HomePage() {
                             : targetPageUrl}
                       </span>
                     </p>
+                    </div>
                   </div>
 
                   <div className="relative w-full lg:justify-self-center">
@@ -1862,12 +1991,12 @@ export default function HomePage() {
                     ) : null}
                   </div>
 
-                  <div ref={userMenuRef} className="relative shrink-0">
+                  <div ref={userMenuRef} className="absolute right-0 top-0 shrink-0 lg:relative lg:right-auto lg:top-auto">
                     <button
                       type="button"
                       onClick={() => setIsUserMenuOpen((prev) => !prev)}
                       className={`relative grid h-12 w-12 place-items-center rounded-full border bg-gradient-to-br text-sm font-extrabold text-white shadow-md transition ${isUserMenuOpen
-                        ? 'border-[#df3655]/40 from-[#df3655] to-[#f06a82] ring-4 ring-[#df3655]/20'
+                        ? 'border-[#cc2727]/40 from-[#cc2727] to-[#e45a5a] ring-4 ring-[#cc2727]/20'
                         : 'border-zinc-200 from-[#2EA6F7] to-[#1c7fbe] hover:shadow-lg'
                         }`}
                       title="User menu"
@@ -1877,7 +2006,7 @@ export default function HomePage() {
                       <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500" />
                     </button>
                     {isUserMenuOpen ? (
-                      <div className="absolute right-0 top-14 z-30 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+                      <div className="absolute right-0 top-14 z-30 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
                         <div className="bg-gradient-to-r from-[#f8fbff] via-white to-[#fff3f6] px-4 py-3">
                           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Signed in as</p>
                           <p className="mt-1 text-sm font-bold text-zinc-900">{currentUser?.name || 'User'}</p>
@@ -1890,8 +2019,18 @@ export default function HomePage() {
                         </div>
                         <button
                           type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setIsPanelUsersOpen(true);
+                          }}
+                          className="mx-3 mt-3 w-[calc(100%-24px)] rounded-xl border border-[#2EA6F7]/30 bg-blue-50 px-3 py-2 text-sm font-semibold text-[#1679b9] transition hover:bg-blue-100"
+                        >
+                          Panel Users
+                        </button>
+                        <button
+                          type="button"
                           onClick={handleLogout}
-                          className="m-3 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                          className="m-3 mt-2 w-[calc(100%-24px)] rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                         >
                           Logout
                         </button>
@@ -1954,7 +2093,7 @@ export default function HomePage() {
                         </h3>
                         <p className="mt-1 text-xs text-zinc-500">Page name and URL list</p>
                         <div className="mt-3 max-h-[340px] overflow-auto rounded-xl border border-zinc-100">
-                          <table className="w-full border-collapse">
+                          <table className="min-w-[520px] w-full border-collapse">
                             <thead className="sticky top-0 bg-zinc-50">
                               <tr>
                                 <th className="border-b border-zinc-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -2024,7 +2163,7 @@ export default function HomePage() {
                             type="button"
                             onClick={() => setSectionViewMode('list')}
                             className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${sectionViewMode === 'list'
-                              ? 'bg-[#df3655] text-white shadow-sm'
+                              ? 'bg-[#cc2727] text-white shadow-sm'
                               : 'text-zinc-600 hover:bg-zinc-100'
                               }`}
                             title="List view"
@@ -2055,7 +2194,7 @@ export default function HomePage() {
                             type="button"
                             onClick={() => setSectionViewMode('grid')}
                             className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${sectionViewMode === 'grid'
-                              ? 'bg-[#df3655] text-white shadow-sm'
+                              ? 'bg-[#cc2727] text-white shadow-sm'
                               : 'text-zinc-600 hover:bg-zinc-100'
                               }`}
                             title="Grid view"
@@ -2098,7 +2237,7 @@ export default function HomePage() {
                     ) : sectionViewMode === 'list' ? (
                       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                         <div className="max-h-[60vh] overflow-auto">
-                          <table className="w-full border-collapse">
+                          <table className="min-w-[680px] w-full border-collapse">
                             <thead className="sticky top-0 z-10 bg-zinc-50">
                               <tr>
                                 <th className="w-14 border-b border-zinc-200 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -2158,7 +2297,7 @@ export default function HomePage() {
                                       <button
                                         type="button"
                                         onClick={() => handleSelectPage(item.value)}
-                                        className="inline-grid h-8 w-8 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#df3655]/30 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                        className="inline-grid h-8 w-8 place-items-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#cc2727]/30 hover:bg-[#cc2727]/5 hover:text-[#cc2727]"
                                         title={`Edit SEO for ${item.label}`}
                                         aria-label={`Edit SEO for ${item.label}`}
                                       >
@@ -2229,7 +2368,7 @@ export default function HomePage() {
                               <button
                                 type="button"
                                 onClick={() => handleSelectPage(item.value)}
-                                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-[#df3655]/30 hover:bg-[#df3655]/5 hover:text-[#df3655]"
+                                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:border-[#cc2727]/30 hover:bg-[#cc2727]/5 hover:text-[#cc2727]"
                                 title={`Edit SEO for ${item.label}`}
                                 aria-label={`Edit SEO for ${item.label}`}
                               >
@@ -2290,7 +2429,7 @@ export default function HomePage() {
                         type="button"
                         disabled={saving}
                         onClick={openPreview}
-                        className="rounded-xl bg-[#df3655] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c92c49] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl bg-[#cc2727] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a91f1f] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Preview & Save SEO
                       </button>
@@ -2307,11 +2446,11 @@ export default function HomePage() {
 
       {successMessage ? (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md animate-in fade-in"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-3 backdrop-blur-md animate-in fade-in sm:p-4"
           role="status"
           aria-live="polite"
         >
-          <div className="flex flex-col items-center gap-4 rounded-3xl bg-white px-10 py-8 text-center shadow-2xl ring-1 ring-emerald-200">
+          <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl bg-white px-5 py-7 text-center shadow-2xl ring-1 ring-emerald-200 sm:px-10 sm:py-8">
             <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -2335,13 +2474,15 @@ export default function HomePage() {
         </div>
       ) : null}
 
+      {isPanelUsersOpen ? <PanelUsers panelRole="seo" currentUser={currentUser} onClose={() => setIsPanelUsersOpen(false)} /> : null}
+
       {isPreviewOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+          <div className="flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-5 sm:py-4">
+              <div className="min-w-0">
                 <h3 className="text-lg font-bold text-zinc-900">SEO Preview</h3>
-                <p className="text-sm text-zinc-600">Path: {targetPageUrl}</p>
+                <p className="break-all text-xs text-zinc-600 sm:text-sm">Path: {targetPageUrl}</p>
               </div>
               <button
                 type="button"
@@ -2352,22 +2493,22 @@ export default function HomePage() {
               </button>
             </div>
 
-            <div className="max-h-[65vh] overflow-auto p-5">
+            <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-5">
               <p className="mb-2 text-xs text-zinc-500">
                 You can edit directly within the preview. Upon confirming the save, these edited tags will be saved.
               </p>
               <textarea
                 value={previewDraft}
                 onChange={(event) => setPreviewDraft(event.target.value)}
-                className="min-h-[360px] w-full rounded-xl bg-zinc-950 p-4 font-mono text-xs text-zinc-100 outline-none ring-1 ring-zinc-700 focus:ring-2 focus:ring-[#2EA6F7]"
+                className="min-h-[300px] w-full rounded-xl bg-zinc-950 p-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-zinc-700 focus:ring-2 focus:ring-[#2EA6F7] sm:min-h-[360px] sm:p-4"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-zinc-200 px-5 py-4">
+            <div className="flex flex-col-reverse gap-2 border-t border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-5 sm:py-4">
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(false)}
-                className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+                className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 sm:w-auto sm:py-2"
               >
                 Close Preview
               </button>
@@ -2380,7 +2521,7 @@ export default function HomePage() {
                   await handleSave(parsedData);
                   setIsPreviewOpen(false);
                 }}
-                className="rounded-xl bg-[#df3655] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c92c49] disabled:opacity-60"
+                className="w-full rounded-xl bg-[#cc2727] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#a91f1f] disabled:opacity-60 sm:w-auto sm:py-2"
               >
                 {saving ? 'Saving...' : 'Confirm Save SEO'}
               </button>
