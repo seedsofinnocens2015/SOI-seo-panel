@@ -169,6 +169,10 @@ const PAGE_TREE = [
             value: '/reproductive-health-conditions/pcos-vs-pmos',
           },
           {
+            label: 'PCOD (Polycystic Ovarian Disease)',
+            value: '/reproductive-health-conditions/polycystic-ovary-disease-pcod',
+          },
+          {
             label: 'Irregular Menstrual Cycle',
             value: '/reproductive-health-conditions/irregular-menstrual-cycle',
           },

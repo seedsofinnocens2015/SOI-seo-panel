@@ -4,16 +4,30 @@ import { useCallback, useEffect, useState } from 'react';
 import { createJob, deleteJob, fetchManagedJobs, updateJob } from '../../lib/jobApi';
 
 const JOB_FIELDS = [
-  'Medical',
-  'Laboratory',
-  'Nursing',
-  'Admin',
-  'Marketing',
-  'Calling',
-  'Counsellor',
-  'Finance',
+  'Accounts & Finance',
+  'Admin & Operations',
+  'Billing',
+  'Business Development',
+  'Call Center',
+  'Clinical Operations',
+  'Digital Marketing',
+  'Embryology',
+  'Facility & Maintenance',
+  'Field Operations',
+  'Human Resources',
   'IT',
-  'Other',
+  'IVF',
+  'Lab Operations',
+  'Management',
+  'Molecular Biology',
+  'Nursing',
+  'OT Operations',
+  'Pathology',
+  'Patient Coordination',
+  'Pharmacy',
+  'Purchase & Procurement',
+  'Quality & Compliances',
+  'Sales & Marketing',
 ];
 
 const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Work from home', 'Alternate days'];
@@ -21,7 +35,7 @@ const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Work from home', 'Alternate
 const EMPTY_FORM = {
   title: '',
   location: '',
-  jobField: 'Medical',
+  jobField: 'Accounts & Finance',
   employmentType: 'Full-time',
   experience: '',
   description: '',
@@ -74,7 +88,7 @@ export default function HrOpenings({ onCountChange }) {
     setForm({
       title: job.title || '',
       location: job.location || '',
-      jobField: job.jobField || 'Medical',
+      jobField: JOB_FIELDS.includes(job.jobField) ? job.jobField : JOB_FIELDS[0],
       employmentType: job.employmentType || 'Full-time',
       experience: job.experience || '',
       description: job.description || '',
