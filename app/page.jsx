@@ -355,7 +355,7 @@ const PAGE_TREE = [
     label: 'Doctors',
     children: [
       { label: 'All IVF Specialists', value: '/ivf-doctor' },
-      {
+            {
         label: 'All IVF Specialists - Profiles',
         children: [
           { label: 'Dr. Gauri Agarwal', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist' },
@@ -385,6 +385,7 @@ const PAGE_TREE = [
           { label: 'Dr. Mangla Kawade', value: '/ivf-doctor/dr-mangla-kawade-ivf-specialist' },
           { label: 'Dr. Manisha', value: '/ivf-doctor/dr-manisha-ivf-specialist/' },
           { label: 'Dr Sunita Jamwal', value: '/ivf-doctor/dr-sunita-ivf-specialist/' },
+          { label: 'Dr Ayushi Agarwal', value: '/ivf-doctor/dr-ayushi-agarwal-ivf-specialist/' },
         ],
       },
       { label: 'Maternal-Fetal Medicine Specialists', value: '/ivf-doctor/maternal-fetal-medicine' },
@@ -400,6 +401,8 @@ const PAGE_TREE = [
       { label: 'Call Back Form', value: '/contact/call-back-form' },
       { label: 'Centre Locator', value: '/contact/centre-locator' },
       { label: 'Careers', value: '/contact/careers' },
+      { label: 'Careers – Apply', value: '/contact/careers/apply' },
+      { label: 'Careers – General Application', value: '/contact/careers/general-application' },
       { label: 'Feedback', value: '/contact/feedback' },
     ],
   },
