@@ -314,6 +314,7 @@ const PAGE_TREE = [
             children: [
               { label: 'International', value: '/best-ivf-centre-in-international' },
               { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
+              { label: 'Cameroon, Central Africa', value: '/best-ivf-centre-in-cameroon' },
             ],
           },
         ],
