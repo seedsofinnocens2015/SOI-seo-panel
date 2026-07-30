@@ -410,7 +410,7 @@ const PAGE_TREE = [
   {
     label: 'Training Academy',
     children: [
-      { label: 'Training Programs Academy', value: '/training-academy' },
+      // { label: 'Training Programs Academy', value: '/training-academy' },
       {
         label: 'Andrology Technician Training Program',
         value: '/training-academy/andrology-technician-training-program',
