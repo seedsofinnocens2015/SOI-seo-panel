@@ -7,6 +7,7 @@ import {
   fetchManagedApplications,
   updateApplication as updateApplicantRecord,
   updateApplicationStatus,
+  viewApplicationResume,
 } from '../../lib/jobApplicationApi';
 import { fetchManagedJobs } from '../../lib/jobApi';
 
@@ -219,12 +220,14 @@ export default function HrApplications({ onCountChange }) {
   const [jobFieldFilter, setJobFieldFilter] = useState('all');
   const [updatingId, setUpdatingId] = useState('');
   const [downloadingId, setDownloadingId] = useState('');
+  const [viewingId, setViewingId] = useState('');
   const [savingId, setSavingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openActionMenuId, setOpenActionMenuId] = useState('');
   const filterPanelRef = useRef(null);
 
   const loadApplications = useCallback(async () => {
@@ -274,6 +277,25 @@ export default function HrApplications({ onCountChange }) {
     document.addEventListener('keydown', closeDeleteConfirmation);
     return () => document.removeEventListener('keydown', closeDeleteConfirmation);
   }, [deleteConfirmation, deletingId]);
+
+  useEffect(() => {
+    if (!openActionMenuId) return undefined;
+    function closeActionMenu(event) {
+      if (event.key === 'Escape') {
+        setOpenActionMenuId('');
+        return;
+      }
+      if (event.type === 'mousedown' && !event.target.closest('[data-application-actions]')) {
+        setOpenActionMenuId('');
+      }
+    }
+    document.addEventListener('mousedown', closeActionMenu);
+    document.addEventListener('keydown', closeActionMenu);
+    return () => {
+      document.removeEventListener('mousedown', closeActionMenu);
+      document.removeEventListener('keydown', closeActionMenu);
+    };
+  }, [openActionMenuId]);
 
   const filterOptions = useMemo(() => {
     const unique = (values) => Array.from(new Set(values.filter(Boolean)))
@@ -365,6 +387,18 @@ export default function HrApplications({ onCountChange }) {
       setError(downloadError.message || 'Unable to download resume');
     } finally {
       setDownloadingId('');
+    }
+  }
+
+  async function handleResumeView(application) {
+    setViewingId(application._id);
+    setError('');
+    try {
+      await viewApplicationResume(application._id);
+    } catch (viewError) {
+      setError(viewError.message || 'Unable to view resume');
+    } finally {
+      setViewingId('');
     }
   }
 
@@ -502,9 +536,30 @@ export default function HrApplications({ onCountChange }) {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredApplications.map((application) => (
-              <article key={application._id} className="flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+              <article key={application._id} className="relative flex min-w-0 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div data-application-actions className="absolute right-3 top-3 z-20">
+                  <button
+                    type="button"
+                    onClick={() => setOpenActionMenuId((current) => current === application._id ? '' : application._id)}
+                    aria-label={`More actions for ${application.fullName}`}
+                    aria-haspopup="menu"
+                    aria-expanded={openActionMenuId === application._id}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 bg-white text-xl font-bold leading-none text-zinc-600 shadow-sm hover:bg-zinc-100"
+                  >
+                    ⋮
+                  </button>
+                  {openActionMenuId === application._id ? (
+                    <div role="menu" className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl">
+                      <button type="button" role="menuitem" onClick={() => { setOpenActionMenuId(''); startEditing(application); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-700 hover:bg-zinc-100">Edit Details</button>
+                      <button type="button" role="menuitem" disabled={viewingId === application._id} onClick={() => { setOpenActionMenuId(''); handleResumeView(application); }} className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-[#1679b9] hover:bg-blue-50 disabled:opacity-60">{viewingId === application._id ? 'Opening...' : 'View CV'}</button>
+                      <button type="button" role="menuitem" disabled={downloadingId === application._id} onClick={() => { setOpenActionMenuId(''); handleResumeDownload(application); }} className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-[#1679b9] hover:bg-blue-50 disabled:opacity-60">{downloadingId === application._id ? 'Downloading...' : 'Download CV'}</button>
+                      <div className="my-1 border-t border-zinc-100" />
+                      <button type="button" role="menuitem" disabled={deletingId === application._id} onClick={() => { setOpenActionMenuId(''); requestApplicantDelete(application); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60">{deletingId === application._id ? 'Deleting...' : 'Delete Application'}</button>
+                    </div>
+                  ) : null}
+                </div>
                 <div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 pr-10">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate text-lg font-bold text-zinc-900">{application.fullName}</h3>
                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${STATUS_STYLES[application.status] || STATUS_STYLES.new}`}>{application.status}</span>
@@ -515,12 +570,7 @@ export default function HrApplications({ onCountChange }) {
                     <p className="mt-1 break-all text-xs text-zinc-500">{application.email || 'No email'}</p>
                     <p className="mt-1 text-xs text-zinc-400">Applied {new Date(application.createdAt).toLocaleDateString('en-IN')}</p>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setSelected(application)} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100">View Details</button>
-                    <button type="button" onClick={() => startEditing(application)} className="rounded-lg border border-[#2EA6F7] px-3 py-2 text-xs font-bold text-[#1679b9] hover:bg-blue-50">Edit</button>
-                    <button type="button" disabled={downloadingId === application._id} onClick={() => handleResumeDownload(application)} className="rounded-lg bg-[#2EA6F7] px-3 py-2 text-xs font-bold text-white hover:bg-[#1c7fbe] disabled:opacity-60">{downloadingId === application._id ? 'Downloading...' : 'Download CV'}</button>
-                    <button type="button" disabled={deletingId === application._id} onClick={() => requestApplicantDelete(application)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60">{deletingId === application._id ? 'Deleting...' : 'Delete'}</button>
-                  </div>
+                  <button type="button" onClick={() => setSelected(application)} className="mt-4 w-full rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100">View Details</button>
                 </div>
                 <div className="mt-auto border-t border-zinc-100 pt-4">
                   <div className="flex items-center justify-between gap-3">
@@ -632,6 +682,7 @@ export default function HrApplications({ onCountChange }) {
                 <button type="button" disabled={deletingId === selected._id} onClick={() => requestApplicantDelete(selected)} className="w-full rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 sm:mr-auto sm:w-auto">{deletingId === selected._id ? 'Deleting...' : 'Delete Applicant'}</button>
                 <button type="button" onClick={() => startEditing(selected)} className="w-full rounded-xl border border-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-[#1679b9] hover:bg-blue-50 sm:w-auto">Edit Details</button>
                 <button type="button" onClick={() => setSelected(null)} className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-100 sm:w-auto">Close</button>
+                <button type="button" disabled={viewingId === selected._id} onClick={() => handleResumeView(selected)} className="w-full rounded-xl border border-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-[#1679b9] hover:bg-blue-50 disabled:opacity-60 sm:w-auto">{viewingId === selected._id ? 'Opening...' : 'View Resume/CV'}</button>
                 <button type="button" disabled={downloadingId === selected._id} onClick={() => handleResumeDownload(selected)} className="w-full rounded-xl bg-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1c7fbe] disabled:opacity-60 sm:w-auto">{downloadingId === selected._id ? 'Downloading...' : 'Download Resume/CV'}</button>
               </div>
                 </>
