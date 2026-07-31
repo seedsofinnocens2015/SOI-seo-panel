@@ -355,6 +355,7 @@ const PAGE_TREE = [
   {
     label: 'Doctors',
     children: [
+      { label: 'Doctors', value: '/best-ivf-doctor-in-india' },
       { label: 'All IVF Specialists', value: '/ivf-doctor' },
             {
         label: 'All IVF Specialists - Profiles',
