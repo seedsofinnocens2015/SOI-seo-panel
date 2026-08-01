@@ -315,6 +315,8 @@ const PAGE_TREE = [
               { label: 'International', value: '/best-ivf-centre-in-international' },
               { label: 'Mabela, Muscat, Oman', value: '/best-ivf-centre-in-mabela-muscat' },
               { label: 'Cameroon, Central Africa', value: '/best-ivf-centre-in-cameroon' },
+              { label: 'Sri Lanka', value: '/best-ivf-centre-in-sri-lanka' },
+              { label: 'Bangladesh', value: '/best-ivf-centre-in-bangladesh' },
             ],
           },
         ],
