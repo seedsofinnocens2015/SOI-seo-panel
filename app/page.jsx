@@ -362,6 +362,7 @@ const PAGE_TREE = [
             {
         label: 'All IVF Specialists - Profiles',
         children: [
+          { label: 'Dr. Gauri Agarwal - New Profile', value: '/dr-gauri-agarwal/' },
           { label: 'Dr. Gauri Agarwal', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist' },
           { label: 'Dr. Alpana Razadan', value: '/genetic-expert/dr-alpana-razadan' },
           { label: 'Dr. Lisha Singh', value: '/ivf-doctor/dr-lisha-singh-ivf-specialist' },
