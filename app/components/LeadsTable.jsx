@@ -25,6 +25,14 @@ const LANDING_COLUMNS = [
   ['utm_campaign', 'UTM Campaign'],
 ];
 
+const SURGICAL_COLUMNS = [
+  ['name', 'Name'],
+  ['phone', 'Phone Number'],
+  ['center', 'Center'],
+  ['message', 'Message'],
+  ['source', 'Source'],
+];
+
 function formatDate(value) {
   if (!value) return '—';
   return new Intl.DateTimeFormat('en-IN', {
@@ -60,8 +68,18 @@ export default function LeadsTable({ type }) {
   const [leadFilter, setLeadFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
   const [exportingExcel, setExportingExcel] = useState(false);
-  const columns = type === 'website' ? WEBSITE_COLUMNS : LANDING_COLUMNS;
-  const title = type === 'website' ? 'Website Leads' : 'Landing Page Leads';
+  const columns =
+    type === 'website'
+      ? WEBSITE_COLUMNS
+      : type === 'surgical-center'
+        ? SURGICAL_COLUMNS
+        : LANDING_COLUMNS;
+  const title =
+    type === 'website'
+      ? 'Website Leads'
+      : type === 'surgical-center'
+        ? 'Surgical Center Leads'
+        : 'Landing Page Leads';
 
   useEffect(() => {
     let cancelled = false;

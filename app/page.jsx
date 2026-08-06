@@ -754,6 +754,7 @@ function getUserInitials(name = '') {
 const DASHBOARD_PAGE = '__dashboard__';
 const WEBSITE_LEADS_PAGE = '__website_leads__';
 const LANDING_LEADS_PAGE = '__landing_leads__';
+const SURGICAL_LEADS_PAGE = '__surgical_leads__';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
 const AUTH_BACKGROUND_STYLE = {
   backgroundImage: "linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)), url('/banner.webp')",
@@ -1069,7 +1070,8 @@ export default function HomePage() {
   const isDashboardView = selectedPage === DASHBOARD_PAGE && !isSectionView;
   const isWebsiteLeadsView = selectedPage === WEBSITE_LEADS_PAGE && !isSectionView;
   const isLandingLeadsView = selectedPage === LANDING_LEADS_PAGE && !isSectionView;
-  const isLeadsView = isWebsiteLeadsView || isLandingLeadsView;
+  const isSurgicalLeadsView = selectedPage === SURGICAL_LEADS_PAGE && !isSectionView;
+  const isLeadsView = isWebsiteLeadsView || isLandingLeadsView || isSurgicalLeadsView;
   const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
   const pageMetaByValue = useMemo(
     () => new Map(allPageOptions.map((item) => [item.value, item])),
@@ -1893,6 +1895,7 @@ export default function HomePage() {
                 {[
                   [WEBSITE_LEADS_PAGE, 'Website Leads'],
                   [LANDING_LEADS_PAGE, 'Landing Page Leads'],
+                  [SURGICAL_LEADS_PAGE, 'Surgical Center Leads'],
                 ].map(([page, label]) => (
                   <button
                     key={page}
@@ -1994,6 +1997,8 @@ export default function HomePage() {
                             ? 'Website Leads'
                             : isLandingLeadsView
                               ? 'Landing Page Leads'
+                              : isSurgicalLeadsView
+                                ? 'Surgical Center Leads'
                           : isSectionView
                             ? [...(selectedSection.parentTrail || []), selectedSection.node.label].join(' › ')
                             : targetPageUrl}
@@ -2097,6 +2102,8 @@ export default function HomePage() {
                   <LeadsTable key="website" type="website" />
                 ) : isLandingLeadsView ? (
                   <LeadsTable key="landing-page" type="landing-page" />
+                ) : isSurgicalLeadsView ? (
+                  <LeadsTable key="surgical-center" type="surgical-center" />
                 ) : isDashboardView ? (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
