@@ -6,6 +6,7 @@ import SeoForm from './components/SeoForm';
 import HrOpenings from './components/HrOpenings';
 import HrApplications from './components/HrApplications';
 import PanelUsers from './components/PanelUsers';
+import LeadsTable from './components/LeadsTable';
 import { fetchManagedJobs } from '../lib/jobApi';
 import { fetchManagedApplications } from '../lib/jobApplicationApi';
 import { fetchSeo, fetchSeoStats, normalizePageUrl, saveSeo } from '../lib/seoApi';
@@ -751,6 +752,8 @@ function getUserInitials(name = '') {
 }
 
 const DASHBOARD_PAGE = '__dashboard__';
+const WEBSITE_LEADS_PAGE = '__website_leads__';
+const LANDING_LEADS_PAGE = '__landing_leads__';
 const SELECTED_PAGE_STORAGE_KEY = 'seoPanelSelectedPage';
 const AUTH_BACKGROUND_STYLE = {
   backgroundImage: "linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)), url('/banner.webp')",
@@ -1064,6 +1067,9 @@ export default function HomePage() {
   const targetPageUrl = useMemo(() => selectedPage, [selectedPage]);
   const isSectionView = Boolean(selectedSection);
   const isDashboardView = selectedPage === DASHBOARD_PAGE && !isSectionView;
+  const isWebsiteLeadsView = selectedPage === WEBSITE_LEADS_PAGE && !isSectionView;
+  const isLandingLeadsView = selectedPage === LANDING_LEADS_PAGE && !isSectionView;
+  const isLeadsView = isWebsiteLeadsView || isLandingLeadsView;
   const allPageOptions = useMemo(() => flattenPageTree(PAGE_TREE), []);
   const pageMetaByValue = useMemo(
     () => new Map(allPageOptions.map((item) => [item.value, item])),
@@ -1154,6 +1160,13 @@ export default function HomePage() {
     setIsMobileSidebarOpen(false);
   }
 
+  function handleOpenLeads(page) {
+    setSelectedPage(page);
+    setSelectedSection(null);
+    setPreviousSection(null);
+    setIsMobileSidebarOpen(false);
+  }
+
   function handleSelectFromSearch(item) {
     setPreviousSection(selectedSection || deriveParentSection(item.value));
     setSelectedPage(item.value);
@@ -1188,7 +1201,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated || currentRole !== 'seo' || isDashboardView || isSectionView) {
+    if (!isAuthenticated || currentRole !== 'seo' || isDashboardView || isSectionView || isLeadsView) {
       return undefined;
     }
 
@@ -1244,7 +1257,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, currentRole, isDashboardView, isSectionView]);
+  }, [targetPageUrl, selectedHierarchyKey, isAuthenticated, currentRole, isDashboardView, isSectionView, isLeadsView]);
 
   useEffect(() => {
     if (!successMessage) return undefined;
@@ -1876,6 +1889,25 @@ export default function HomePage() {
                   Dashboard
                 </button>
               </li>
+              <li className="grid grid-cols-1 gap-1.5 border-b border-zinc-100 pb-2">
+                {[
+                  [WEBSITE_LEADS_PAGE, 'Website Leads'],
+                  [LANDING_LEADS_PAGE, 'Landing Page Leads'],
+                ].map(([page, label]) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handleOpenLeads(page)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      selectedPage === page
+                        ? 'bg-gradient-to-r from-[#cc2727]/15 to-[#cc2727]/5 text-[#cc2727] ring-1 ring-[#cc2727]/20'
+                        : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </li>
               {PAGE_TREE.map((node) => (
                 <SidebarNode
                   key={node.value || node.label}
@@ -1913,7 +1945,7 @@ export default function HomePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#2EA6F7]">Seeds of Innocence</p>
                     <h1 className="mt-1 text-xl font-bold text-zinc-900 sm:text-2xl">SOI Admin Panel</h1>
                     <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
-                      {!isDashboardView && !isSectionView ? (
+                      {!isDashboardView && !isSectionView && !isLeadsView ? (
                         <button
                           type="button"
                           onClick={handleGoBackFromForm}
@@ -1949,6 +1981,8 @@ export default function HomePage() {
                       <span>
                         {isDashboardView
                           ? 'Current view:'
+                          : isLeadsView
+                            ? 'Current view:'
                           : isSectionView
                             ? 'Section:'
                             : 'Selected path:'}
@@ -1956,6 +1990,10 @@ export default function HomePage() {
                       <span className="rounded-full bg-zinc-100 px-2 py-1 font-medium text-zinc-900">
                         {isDashboardView
                           ? 'Dashboard'
+                          : isWebsiteLeadsView
+                            ? 'Website Leads'
+                            : isLandingLeadsView
+                              ? 'Landing Page Leads'
                           : isSectionView
                             ? [...(selectedSection.parentTrail || []), selectedSection.node.label].join(' › ')
                             : targetPageUrl}
@@ -1980,11 +2018,11 @@ export default function HomePage() {
                         }
                       }}
                       placeholder="Search by page name or path (e.g. IVF, /contact/whatsapp)"
-                      disabled={isDashboardView}
+                      disabled={isDashboardView || isLeadsView}
                       className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-800 outline-none transition focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/20"
                     />
 
-                    {showSearchResults && searchText.trim() && !isDashboardView ? (
+                    {showSearchResults && searchText.trim() && !isDashboardView && !isLeadsView ? (
                       <div className="absolute z-20 mt-2 max-h-72 w-full overflow-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         {filteredSearchResults.length > 0 ? (
                           filteredSearchResults.map((item) => (
@@ -2055,7 +2093,11 @@ export default function HomePage() {
               </div>
 
               <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
-                {isDashboardView ? (
+                {isWebsiteLeadsView ? (
+                  <LeadsTable key="website" type="website" />
+                ) : isLandingLeadsView ? (
+                  <LeadsTable key="landing-page" type="landing-page" />
+                ) : isDashboardView ? (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <button
