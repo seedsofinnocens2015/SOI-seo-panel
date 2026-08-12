@@ -681,7 +681,18 @@ export default function HrApplications({ onCountChange }) {
               <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-3">
                 <button type="button" disabled={deletingId === selected._id} onClick={() => requestApplicantDelete(selected)} className="w-full rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 sm:mr-auto sm:w-auto">{deletingId === selected._id ? 'Deleting...' : 'Delete Applicant'}</button>
                 <button type="button" onClick={() => startEditing(selected)} className="w-full rounded-xl border border-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-[#1679b9] hover:bg-blue-50 sm:w-auto">Edit Details</button>
-                <button type="button" onClick={() => setSelected(null)} className="w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-100 sm:w-auto">Close</button>
+                <label className="w-full sm:w-auto">
+                  <span className="sr-only">Hiring status</span>
+                  <select
+                    aria-label="Hiring status"
+                    disabled={updatingId === selected._id}
+                    value={selected.status}
+                    onChange={(event) => handleStatusChange(selected, event.target.value)}
+                    className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700 outline-none focus:border-[#2EA6F7] focus:ring-2 focus:ring-[#2EA6F7]/15 disabled:opacity-60 sm:w-auto"
+                  >
+                    {STATUSES.map((status) => <option key={status} value={status}>Hiring: {status[0].toUpperCase() + status.slice(1)}</option>)}
+                  </select>
+                </label>
                 <button type="button" disabled={viewingId === selected._id} onClick={() => handleResumeView(selected)} className="w-full rounded-xl border border-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-[#1679b9] hover:bg-blue-50 disabled:opacity-60 sm:w-auto">{viewingId === selected._id ? 'Opening...' : 'View Resume/CV'}</button>
                 <button type="button" disabled={downloadingId === selected._id} onClick={() => handleResumeDownload(selected)} className="w-full rounded-xl bg-[#2EA6F7] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1c7fbe] disabled:opacity-60 sm:w-auto">{downloadingId === selected._id ? 'Downloading...' : 'Download Resume/CV'}</button>
               </div>
