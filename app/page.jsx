@@ -394,6 +394,7 @@ const PAGE_TREE = [
           { label: 'Dr. Manisha', value: '/ivf-doctor/dr-manisha-ivf-specialist/' },
           { label: 'Dr Sunita Jamwal', value: '/ivf-doctor/dr-sunita-ivf-specialist/' },
           { label: 'Dr Ayushi Agarwal', value: '/ivf-doctor/dr-ayushi-agarwal-ivf-specialist/' },
+          { label: 'Dr. Garima Sinha', value: '/ivf-doctor/dr-garima-sinha-gynae-endoscopy/' },
         ],
       },
       { label: 'Maternal-Fetal Medicine Specialists', value: '/ivf-doctor/maternal-fetal-medicine' },
