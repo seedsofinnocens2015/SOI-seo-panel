@@ -258,7 +258,7 @@ export default function HrOpenings({ onCountChange }) {
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                </div>
                <h3 className="text-xl font-black text-zinc-900">No Openings Added</h3>
-               <p className="mt-2 text-sm font-medium leading-relaxed text-zinc-500">You haven't posted any job openings yet. Click “Add Opening” to publish your first vacancy.</p>
+               <p className="mt-2 text-sm font-medium leading-relaxed text-zinc-500">You haven&apos;t posted any job openings yet. Click “Add Opening” to publish your first vacancy.</p>
                <button onClick={openCreateForm} className="mt-6 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-zinc-800">Add First Opening</button>
             </div>
           </div>

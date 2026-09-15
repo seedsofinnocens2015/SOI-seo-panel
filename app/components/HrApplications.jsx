@@ -237,10 +237,26 @@ export default function HrApplications({ onCountChange, initialSelectedId, onCle
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [openActionMenuId, setOpenActionMenuId] = useState('');
   const filterPanelRef = useRef(null);
+  const [viewMode, setViewMode] = useState('grid');
+  const [mounted, setMounted] = useState(false);
   
   const [currentTime, setCurrentTime] = useState(0);
+
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setCurrentTime(Date.now()), []);
+  useEffect(() => {
+    setCurrentTime(Date.now());
+    const savedView = localStorage.getItem('hr_applications_view_mode');
+    if (savedView === 'list' || savedView === 'grid') {
+      setViewMode(savedView);
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('hr_applications_view_mode', viewMode);
+    }
+  }, [viewMode, mounted]);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
@@ -677,8 +693,26 @@ export default function HrApplications({ onCountChange, initialSelectedId, onCle
           <h2 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl pb-1">Job Applications</h2>
           <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">Review candidate details, resumes, and manage hiring status.</p>
         </div>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <label className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+        <div className="flex flex-wrap w-full items-center gap-2 sm:w-auto">
+          <div className="flex shrink-0 items-center rounded-xl border border-zinc-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              aria-label="Grid view"
+              className={`rounded-lg p-2 transition-all ${viewMode === 'grid' ? 'bg-[#cc2627]/10 text-[#cc2627] shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              aria-label="List view"
+              className={`rounded-lg p-2 transition-all ${viewMode === 'list' ? 'bg-[#cc2627]/10 text-[#cc2627] shadow-sm' : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50'}`}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+          </div>
+          <label className="relative min-w-0 flex-1 sm:w-64 lg:w-72 sm:flex-none">
             <span className="sr-only">Search all applications</span>
             <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></span>
             <input
@@ -743,11 +777,68 @@ export default function HrApplications({ onCountChange, initialSelectedId, onCle
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredApplications.map((application) => {
+          <div className={viewMode === 'grid' ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-3"}>
+            {filteredApplications.map((application, index) => {
               const isOldNew = application.status === 'new' && (currentTime - new Date(application.createdAt).getTime() > 24 * 60 * 60 * 1000);
+              const cardClass = isOldNew ? 'border-zinc-200 bg-white' : CARD_STYLES[application.status] || CARD_STYLES.new;
+              
+              if (viewMode === 'list') {
+                return (
+                  <article key={application._id} className={`group relative flex items-center justify-between rounded-xl border p-4 shadow-sm transition-all duration-300 hover:shadow-md ${cardClass}`}>
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/60 font-bold text-zinc-500 shadow-sm border border-zinc-200/50">
+                        #{index + 1}
+                      </div>
+                      <div className="min-w-0 flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate text-base font-black text-zinc-900">{application.fullName}</h3>
+                            {application.applicationType === 'general' ? <span className="inline-block w-2 h-2 rounded-full bg-violet-500" title="General Application" /> : null}
+                          </div>
+                          <p className="truncate text-xs font-bold text-[#cc2627]">{application.positionTitle}</p>
+                        </div>
+                        <div className="hidden md:block min-w-0">
+                          <p className="truncate text-xs font-semibold text-zinc-600">{application.phone}</p>
+                          <p className="truncate text-xs font-semibold text-zinc-500">{application.email || 'No email'}</p>
+                        </div>
+                        <div className="hidden md:block min-w-0">
+                          <p className="truncate text-xs font-semibold text-zinc-600">Applied: {new Date(application.createdAt).toLocaleDateString('en-IN')}</p>
+                          <div className="mt-1">
+                            {application.status === 'new' && isOldNew ? null : (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide border border-current/20 ${STATUS_STYLES[application.status] || STATUS_STYLES.new}`}>{application.status}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 justify-end">
+                          <button type="button" onClick={() => setSelected(application)} className="rounded-lg bg-white/80 border border-zinc-200/50 px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm hover:bg-white transition">View</button>
+                          <button type="button" disabled={viewingId === application._id} onClick={() => handleResumeView(application)} className="rounded-lg bg-[#cc2627]/10 border border-[#cc2627]/20 px-3 py-2 text-xs font-bold text-[#cc2627] shadow-sm hover:bg-[#cc2627]/20 transition disabled:opacity-60">{viewingId === application._id ? '...' : 'CV'}</button>
+                          <div className="relative" data-application-actions>
+                            <button
+                              type="button"
+                              onClick={() => setOpenActionMenuId((current) => current === application._id ? '' : application._id)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60 text-zinc-600 shadow-sm border border-zinc-200/50 hover:bg-white hover:text-zinc-900 transition"
+                            >
+                              ⋮
+                            </button>
+                            {openActionMenuId === application._id ? (
+                              <div role="menu" className="absolute right-0 top-full mt-2 w-44 z-30 overflow-hidden rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl animate-in fade-in slide-in-from-top-1">
+                                <button type="button" role="menuitem" onClick={() => { setOpenActionMenuId(''); startEditing(application); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-700 hover:bg-zinc-100">Edit Details</button>
+                                <button type="button" role="menuitem" disabled={downloadingId === application._id} onClick={() => { setOpenActionMenuId(''); handleResumeDownload(application); }} className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-[#cc2627] hover:bg-[#cc2627]/10 disabled:opacity-60">{downloadingId === application._id ? 'Downloading...' : 'Download CV'}</button>
+                                <div className="my-1 border-t border-zinc-100" />
+                                <button type="button" role="menuitem" disabled={deletingId === application._id} onClick={() => { setOpenActionMenuId(''); requestApplicantDelete(application); }} className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60">{deletingId === application._id ? 'Deleting...' : 'Delete'}</button>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              }
+
+              // Grid View
               return (
-              <article key={application._id} className={`group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border p-5 sm:p-6 transition-all duration-300 ${isOldNew ? 'border-zinc-200 bg-white' : CARD_STYLES[application.status] || CARD_STYLES.new}`}>
+              <article key={application._id} className={`group relative flex min-w-0 flex-col justify-between rounded-[1.5rem] border p-5 sm:p-6 transition-all duration-300 ${cardClass}`}>
                 <div data-application-actions className="absolute right-4 top-4 z-20">
                   <button
                     type="button"

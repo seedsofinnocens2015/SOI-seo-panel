@@ -769,6 +769,22 @@ const HR_NAV_ITEMS = [
 
 function HrPanel({ currentUser, onLogout }) {
   const [activePage, setActivePage] = useState('dashboard');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('seoPanelHrActivePage');
+    if (saved && HR_NAV_ITEMS.some((item) => item.id === saved)) {
+      setActivePage(saved);
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('seoPanelHrActivePage', activePage);
+    }
+  }, [activePage, mounted]);
+
   const [applicationFilter, setApplicationFilter] = useState('all');
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isPanelUsersOpen, setIsPanelUsersOpen] = useState(false);
@@ -1018,7 +1034,7 @@ function HrPanel({ currentUser, onLogout }) {
                     Welcome back, {(currentUser?.name || 'Team').split(' ')[0]}
                   </h2>
                   <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">
-                    Here's what's happening with your hiring pipeline and job applications today.
+                    Here&apos;s what&apos;s happening with your hiring pipeline and job applications today.
                   </p>
                 </div>
                 <div className="hidden sm:flex items-center gap-3 pb-1">
