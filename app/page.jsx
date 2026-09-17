@@ -367,7 +367,7 @@ const PAGE_TREE = [
         children: [
           { label: 'Dr. Gauri Agarwal - New Profile', value: '/dr-gauri-agarwal/' },
           { label: 'Dr. Gauri Agarwal', value: '/ivf-doctor/dr-gauri-agarwal-ivf-specialist' },
-          { label: 'Dr. Alpana Razadan', value: '/genetic-expert/dr-alpana-razadan' },
+          { label: 'Dr. Alpana Razdan', value: '/genetic-expert/dr-alpana-razdan' },
           { label: 'Dr. Lisha Singh', value: '/ivf-doctor/dr-lisha-singh-ivf-specialist' },
           { label: 'Dr. Monika Maan', value: '/ivf-doctor/dr-monika-mann-ivf-specialist' },
           { label: 'Dr. Pratik Kakani', value: '/ivf-doctor/dr-pratik-kakani-gynae-endoscopy' },
