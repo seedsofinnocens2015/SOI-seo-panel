@@ -790,7 +790,7 @@ function HrPanel({ currentUser, onLogout }) {
   const [isPanelUsersOpen, setIsPanelUsersOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [openingCounts, setOpeningCounts] = useState({ total: 0, published: 0 });
-  const [applicationCounts, setApplicationCounts] = useState({ total: 0, new: 0, new24h: 0, hired: 0, shortlisted: 0, rejected: 0, reviewing: 0, recentApplications: [] });
+  const [applicationCounts, setApplicationCounts] = useState({ total: 0, new: 0, new24h: 0, hired: 0, shortlisted: 0, hold: 0, rejected: 0, reviewing: 0, recentApplications: [] });
   const [preselectedApplicationId, setPreselectedApplicationId] = useState(null);
   const profileMenuRef = useRef(null);
   const activeItem = HR_NAV_ITEMS.find((item) => item.id === activePage) || HR_NAV_ITEMS[0];
@@ -868,6 +868,7 @@ function HrPanel({ currentUser, onLogout }) {
           new24h: apps.filter((item) => item.status === 'new' && (Date.now() - new Date(item.createdAt).getTime() <= 24 * 60 * 60 * 1000)).length,
           hired: apps.filter((item) => item.status === 'hired').length,
           shortlisted: apps.filter((item) => item.status === 'shortlisted').length,
+          hold: apps.filter((item) => item.status === 'hold').length,
           rejected: apps.filter((item) => item.status === 'rejected').length,
           reviewing: apps.filter((item) => item.status === 'reviewing').length,
           recentApplications: [...apps].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
@@ -1110,10 +1111,11 @@ function HrPanel({ currentUser, onLogout }) {
                   <h3 className="text-base sm:text-lg font-bold text-zinc-900 shrink-0">Hiring Pipeline (All Time)</h3>
                   <div className="mt-4 sm:mt-6 flex-1 min-h-0 w-full ml-4 sm:ml-0">
                     {(() => {
-                      const newCount = applicationCounts.total - (applicationCounts.reviewing + applicationCounts.shortlisted + applicationCounts.hired + applicationCounts.rejected);
+                      const newCount = applicationCounts.total - (applicationCounts.reviewing + applicationCounts.shortlisted + applicationCounts.hired + applicationCounts.rejected + (applicationCounts.hold || 0));
                       const stats = [
                         { label: 'New', count: newCount, color: '#3b82f6' },
                         { label: 'Reviewing', count: applicationCounts.reviewing, color: '#f59e0b' },
+                        { label: 'Hold', count: applicationCounts.hold || 0, color: '#f97316' },
                         { label: 'Shortlisted', count: applicationCounts.shortlisted, color: '#8b5cf6' },
                         { label: 'Hired', count: applicationCounts.hired, color: '#10b981' },
                         { label: 'Rejected', count: applicationCounts.rejected, color: '#ef4444' },
@@ -1242,6 +1244,7 @@ function HrPanel({ currentUser, onLogout }) {
                           <span className={`shrink-0 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                             app.status === 'hired' ? 'bg-emerald-100 text-emerald-700' :
                             app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            app.status === 'hold' ? 'bg-orange-100 text-orange-700' :
                             app.status === 'shortlisted' ? 'bg-violet-100 text-violet-700' :
                             app.status === 'reviewing' ? 'bg-amber-100 text-amber-700' :
                             'bg-blue-100 text-blue-700'

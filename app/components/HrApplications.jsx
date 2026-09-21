@@ -11,7 +11,7 @@ import {
 } from '../../lib/jobApplicationApi';
 import { fetchManagedJobs } from '../../lib/jobApi';
 
-const STATUSES = ['new', 'reviewing', 'shortlisted', 'rejected', 'hired'];
+const STATUSES = ['new', 'reviewing', 'shortlisted', 'hold', 'rejected', 'hired'];
 const WORK_TYPES = ['Full-time', 'Part-time', 'Work from home', 'Alternate days'];
 const EXPERIENCE_RANGES = [
   { value: '1-3', label: '1 - 3 years', min: 1, max: 3 },
@@ -24,6 +24,7 @@ const STATUS_STYLES = {
   new: 'bg-blue-50 text-blue-700',
   reviewing: 'bg-amber-50 text-amber-700',
   shortlisted: 'bg-violet-50 text-violet-700',
+  hold: 'bg-orange-50 text-orange-700',
   rejected: 'bg-red-50 text-red-700',
   hired: 'bg-emerald-50 text-emerald-700',
 };
@@ -32,6 +33,7 @@ const CARD_STYLES = {
   new: 'border-blue-300 bg-blue-50',
   reviewing: 'border-amber-300 bg-amber-50',
   shortlisted: 'border-violet-300 bg-violet-50',
+  hold: 'border-orange-300 bg-orange-50',
   rejected: 'border-red-300 bg-red-50',
   hired: 'border-emerald-300 bg-emerald-50',
 };
