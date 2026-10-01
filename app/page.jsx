@@ -23,6 +23,7 @@ import {
   verifySignupOtp,
 } from '../lib/authApi';
 import { BLOG_PAGE_TREE } from '../lib/blogPageTree';
+import { IVF_COST_PAGE_TREE } from '../lib/ivfCostPageTree';
 
 const PAGE_TREE = [
   {
@@ -433,6 +434,7 @@ const PAGE_TREE = [
     ],
   },
   BLOG_PAGE_TREE,
+  IVF_COST_PAGE_TREE,
   { label: 'Thank You Page', value: '/thank-you' },
   { label: 'Privacy Policy', value: '/privacy-policy' },
   { label: 'Terms & Conditions', value: '/terms-and-conditions' },
