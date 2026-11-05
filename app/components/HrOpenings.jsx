@@ -147,8 +147,8 @@ export default function HrOpenings({ onCountChange }) {
     <div className="mt-2 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1 sm:px-0">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#cc2627] mb-1.5">Jobs Management</p>
-          <h2 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl pb-1">Current Openings</h2>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#cc2627] mb-1.5">Website Careers</p>
+          <h2 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl pb-1">Website Current Openings</h2>
           <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">Published openings appear automatically on the SOI careers page.</p>
         </div>
         <button

@@ -5,6 +5,13 @@ import Image from 'next/image';
 import SeoForm from './components/SeoForm';
 import HrOpenings from './components/HrOpenings';
 import HrApplications from './components/HrApplications';
+import HrRequisitions from './components/HrRequisitions';
+import HrCandidateMaster from './components/HrCandidateMaster';
+import HrRecruitmentPipeline from './components/HrRecruitmentPipeline';
+import HrInterviewTracker from './components/HrInterviewTracker';
+import HrOfferTracker from './components/HrOfferTracker';
+import HrJoiningTracker from './components/HrJoiningTracker';
+import HrOnboardingChecklist from './components/HrOnboardingChecklist';
 import PanelUsers from './components/PanelUsers';
 import LeadsTable from './components/LeadsTable';
 import { fetchManagedJobs } from '../lib/jobApi';
@@ -765,8 +772,15 @@ const AUTH_BACKGROUND_STYLE = {
 
 const HR_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
-  { id: 'openings', label: 'Current Openings', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
-  { id: 'applications', label: 'Applications', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg> },
+  { id: 'requisitions', label: 'Manpower Requisition', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg> },
+  { id: 'candidate-master', label: 'Candidate Master', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> },
+  { id: 'pipeline', label: 'Recruitment Pipeline', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg> },
+  { id: 'interviews', label: 'Interview Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
+  { id: 'offers', label: 'Offer Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+  { id: 'joinings', label: 'Joining Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+  { id: 'onboarding', label: 'Onboarding Checklist', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
+  { id: 'openings', label: 'Website Current Openings', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
+  { id: 'applications', label: 'Website Applications', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg> },
 ];
 
 function HrPanel({ currentUser, onLogout }) {
@@ -1262,7 +1276,7 @@ function HrPanel({ currentUser, onLogout }) {
                   <div className="mt-4 pt-4 border-t border-zinc-100 shrink-0">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3">Quick Actions</h4>
                     <div className="flex flex-col gap-2 xl:flex-row">
-                      <button type="button" onClick={() => setActivePage('openings')} className="flex-1 rounded-xl bg-zinc-900 px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800">Post a Job</button>
+                      <button type="button" onClick={() => setActivePage('openings')} className="flex-1 rounded-xl bg-zinc-900 px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800">Website Openings</button>
                       <button type="button" onClick={() => setActivePage('applications')} className="flex-1 rounded-xl border border-[#cc2627]/30 bg-[#cc2627]/5 px-3 py-2.5 text-xs font-bold text-[#cc2627] shadow-sm transition hover:bg-[#cc2627]/10">Review CVs</button>
                     </div>
                   </div>
@@ -1457,6 +1471,20 @@ function HrPanel({ currentUser, onLogout }) {
                 />
               ) : null}
             </div>
+          ) : activePage === 'requisitions' ? (
+            <HrRequisitions />
+          ) : activePage === 'candidate-master' ? (
+            <HrCandidateMaster />
+          ) : activePage === 'pipeline' ? (
+            <HrRecruitmentPipeline />
+          ) : activePage === 'interviews' ? (
+            <HrInterviewTracker />
+          ) : activePage === 'offers' ? (
+            <HrOfferTracker />
+          ) : activePage === 'joinings' ? (
+            <HrJoiningTracker />
+          ) : activePage === 'onboarding' ? (
+            <HrOnboardingChecklist />
           ) : activePage === 'openings' ? (
             <HrOpenings onCountChange={setOpeningCounts} />
           ) : activePage === 'applications' ? (

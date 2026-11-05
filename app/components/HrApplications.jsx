@@ -691,8 +691,8 @@ export default function HrApplications({ onCountChange, initialSelectedId, onCle
     <div className="mt-2 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between px-1 sm:px-0">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#cc2627] mb-1.5">Candidate Management</p>
-          <h2 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl pb-1">Job Applications</h2>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#cc2627] mb-1.5">Website Careers</p>
+          <h2 className="text-3xl font-black tracking-tight text-zinc-900 sm:text-4xl pb-1">Website Applications</h2>
           <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">Review candidate details, resumes, and manage hiring status.</p>
         </div>
         <div className="flex flex-wrap w-full items-center gap-2 sm:w-auto">
@@ -721,7 +721,7 @@ export default function HrApplications({ onCountChange, initialSelectedId, onCle
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search applications..."
+              placeholder="Search website applications..."
               className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-9 pr-9 text-sm font-semibold text-zinc-900 shadow-sm outline-none transition-all focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
             />
             {searchQuery ? (
