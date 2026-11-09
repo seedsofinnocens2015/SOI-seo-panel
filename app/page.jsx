@@ -12,6 +12,14 @@ import HrInterviewTracker from './components/HrInterviewTracker';
 import HrOfferTracker from './components/HrOfferTracker';
 import HrJoiningTracker from './components/HrJoiningTracker';
 import HrOnboardingChecklist from './components/HrOnboardingChecklist';
+import HrUsersAndAccess from './components/HrUsersAndAccess';
+import HrRecruitmentFollowUp from './components/HrRecruitmentFollowUp';
+import HrSourceRecruiterPerformance from './components/HrSourceRecruiterPerformance';
+import HrMasterSettings from './components/HrMasterSettings';
+import HrMisReports from './components/HrMisReports';
+import { MasterProvider } from './context/MasterContext';
+import HrUserSessions from './components/HrUserSessions';
+import { sendSessionHeartbeat } from '../lib/userSessionApi';
 import PanelUsers from './components/PanelUsers';
 import LeadsTable from './components/LeadsTable';
 import { fetchManagedJobs } from '../lib/jobApi';
@@ -21,6 +29,7 @@ import {
   clearAuthSession,
   getAuthToken,
   getStoredUser,
+  fetchCurrentUserProfile,
   requestLoginOtp,
   requestPasswordResetOtp,
   requestSignupOtp,
@@ -31,6 +40,7 @@ import {
 } from '../lib/authApi';
 import { BLOG_PAGE_TREE } from '../lib/blogPageTree';
 import { IVF_COST_PAGE_TREE } from '../lib/ivfCostPageTree';
+import { CENTER_BLOGS_PAGE_TREE } from '../lib/centerBlogsTree';
 
 const PAGE_TREE = [
   {
@@ -442,6 +452,7 @@ const PAGE_TREE = [
   },
   BLOG_PAGE_TREE,
   IVF_COST_PAGE_TREE,
+  CENTER_BLOGS_PAGE_TREE,
   { label: 'Thank You Page', value: '/thank-you' },
   { label: 'Privacy Policy', value: '/privacy-policy' },
   { label: 'Terms & Conditions', value: '/terms-and-conditions' },
@@ -770,7 +781,7 @@ const AUTH_BACKGROUND_STYLE = {
   backgroundImage: "linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)), url('/banner.webp')",
 };
 
-const HR_NAV_ITEMS = [
+export const HR_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
   { id: 'requisitions', label: 'Manpower Requisition', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg> },
   { id: 'candidate-master', label: 'Candidate Master', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> },
@@ -779,13 +790,48 @@ const HR_NAV_ITEMS = [
   { id: 'offers', label: 'Offer Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
   { id: 'joinings', label: 'Joining Tracker', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
   { id: 'onboarding', label: 'Onboarding Checklist', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> },
+  { id: 'recruitment-followup', label: 'Recruitment Follow-up', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg> },
+  { id: 'source-performance', label: 'Source & Recruiter Performance', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> },
+  { id: 'mis-reports', label: 'MIS Reports', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+  { id: 'master-settings', label: 'Master Settings', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+  { id: 'users-access', label: 'Users & Access', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
+  { id: 'user-sessions', label: 'User Sessions', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
   { id: 'openings', label: 'Website Current Openings', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
   { id: 'applications', label: 'Website Applications', icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg> },
 ];
 
-function HrPanel({ currentUser, onLogout }) {
+function HrPanel({ currentUser: initialUser, onLogout }) {
+  const [activeUser, setActiveUser] = useState(initialUser);
   const [activePage, setActivePage] = useState('dashboard');
   const [mounted, setMounted] = useState(false);
+
+  // Sync latest permissions from database on mount or refresh
+  useEffect(() => {
+    let cancelled = false;
+    fetchCurrentUserProfile().then((refreshed) => {
+      if (!cancelled && refreshed) {
+        setActiveUser(refreshed);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const currentUser = activeUser;
+  const isSuperAdmin = currentUser?.role === 'admin' || currentUser?.isAdministrator || currentUser?.email === 'amitkumaryadav8314@gmail.com';
+
+  // Filter sidebar items strictly based on user's granted permissions
+  const visibleNavItems = useMemo(() => {
+    if (isSuperAdmin) return HR_NAV_ITEMS;
+    const perms = currentUser?.permissions || {};
+    return HR_NAV_ITEMS.filter((item) => {
+      // If permission is explicitly 'none', hide completely
+      const val = perms[item.id];
+      if (val === 'none') return false;
+      return true;
+    });
+  }, [isSuperAdmin, currentUser]);
 
   useEffect(() => {
     const saved = localStorage.getItem('seoPanelHrActivePage');
@@ -808,8 +854,91 @@ function HrPanel({ currentUser, onLogout }) {
   const [openingCounts, setOpeningCounts] = useState({ total: 0, published: 0 });
   const [applicationCounts, setApplicationCounts] = useState({ total: 0, new: 0, new24h: 0, hired: 0, shortlisted: 0, hold: 0, rejected: 0, reviewing: 0, recentApplications: [] });
   const [preselectedApplicationId, setPreselectedApplicationId] = useState(null);
+
+  // Live Clock & Session Timer
+  const [currentClock, setCurrentClock] = useState('');
+  const [sessionDurationSec, setSessionDurationSec] = useState(0);
+  const activeSessionRef = useRef(null);
+
+  useEffect(() => {
+    // 1. Live Clock updating every second
+    const updateTime = () => {
+      const now = new Date();
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dayName = days[now.getDay()];
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = months[now.getMonth()];
+      const yyyy = now.getFullYear();
+      let hh = now.getHours();
+      const ampm = hh >= 12 ? 'pm' : 'am';
+      hh = hh % 12;
+      hh = hh ? hh : 12;
+      const hhStr = String(hh).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const sec = String(now.getSeconds()).padStart(2, '0');
+      setCurrentClock(`${dayName}, ${dd} ${mm}, ${yyyy}, ${hhStr}:${min}:${sec} ${ampm}`);
+    };
+    updateTime();
+    const clockTimer = setInterval(updateTime, 1000);
+
+    // 2. Session duration tracking & Heartbeat
+    let sessionStart = null;
+    try {
+      const stored = sessionStorage.getItem('soi_hr_session_start');
+      if (stored) {
+        sessionStart = Number(stored);
+      } else {
+        sessionStart = Date.now();
+        sessionStorage.setItem('soi_hr_session_start', String(sessionStart));
+      }
+    } catch {
+      sessionStart = Date.now();
+    }
+
+    const durationTimer = setInterval(() => {
+      const diff = Math.max(0, Math.floor((Date.now() - sessionStart) / 1000));
+      setSessionDurationSec(diff);
+    }, 1000);
+
+    // Initial heartbeat
+    sendSessionHeartbeat()
+      .then((sess) => {
+        if (sess?._id) activeSessionRef.current = sess._id;
+      })
+      .catch(() => {});
+
+    // Periodic heartbeat every 45 seconds to keep session alive in backend
+    const heartbeatInterval = setInterval(() => {
+      sendSessionHeartbeat(activeSessionRef.current)
+        .then((sess) => {
+          if (sess?._id) activeSessionRef.current = sess._id;
+        })
+        .catch(() => {});
+    }, 45000);
+
+    return () => {
+      clearInterval(clockTimer);
+      clearInterval(durationTimer);
+      clearInterval(heartbeatInterval);
+    };
+  }, []);
+
+  const formatSessionTime = (totalSec) => {
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
   const profileMenuRef = useRef(null);
-  const activeItem = HR_NAV_ITEMS.find((item) => item.id === activePage) || HR_NAV_ITEMS[0];
+  const activeItem = visibleNavItems.find((item) => item.id === activePage) || visibleNavItems[0] || HR_NAV_ITEMS[0];
+
+  // If currently on a forbidden page, redirect to first allowed page
+  useEffect(() => {
+    if (visibleNavItems.length > 0 && !visibleNavItems.some((item) => item.id === activePage)) {
+      setActivePage(visibleNavItems[0].id);
+    }
+  }, [visibleNavItems, activePage]);
   const initials = getUserInitials(currentUser?.name);
 
   useEffect(() => {
@@ -920,7 +1049,7 @@ function HrPanel({ currentUser, onLogout }) {
 
           <nav className="flex-1 space-y-1.5" aria-label="HR navigation">
             <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Menu</p>
-            {HR_NAV_ITEMS.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = activePage === item.id;
               return (
                 <button
@@ -989,7 +1118,20 @@ function HrPanel({ currentUser, onLogout }) {
                 </div>
               </div>
             </div>
-            <div ref={profileMenuRef} className="relative shrink-0">
+            <div className="flex items-center gap-4 sm:gap-6">
+              {/* Exact Screenshot Styling for Timing & Session Duration */}
+              {currentClock && (
+                <div className="hidden md:flex items-center gap-3 text-xs sm:text-sm font-bold">
+                  <span className="text-[#12395d] font-bold">
+                    {currentClock}
+                  </span>
+                  <span className="text-zinc-700 font-semibold">
+                    Session <span className="text-[#0d9488] font-bold font-mono">{formatSessionTime(sessionDurationSec)}</span>
+                  </span>
+                </div>
+              )}
+
+              <div ref={profileMenuRef} className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen((prev) => !prev)}
@@ -1022,12 +1164,12 @@ function HrPanel({ currentUser, onLogout }) {
                     type="button"
                     onClick={() => {
                       setIsProfileMenuOpen(false);
-                      setIsPanelUsersOpen(true);
+                      setActivePage('users-access');
                     }}
                     className="mx-3 mt-3 w-[calc(100%-24px)] rounded-xl border border-[#2EA6F7]/30 bg-blue-50 px-3 py-2 text-sm font-semibold text-[#1679b9] transition hover:bg-blue-100"
                     role="menuitem"
                   >
-                    Panel Users
+                    Users & Access
                   </button>
                   <button
                     type="button"
@@ -1040,6 +1182,7 @@ function HrPanel({ currentUser, onLogout }) {
                 </div>
               ) : null}
             </div>
+          </div>
           </header>
 
           {activePage === 'dashboard' ? (
@@ -1485,6 +1628,18 @@ function HrPanel({ currentUser, onLogout }) {
             <HrJoiningTracker />
           ) : activePage === 'onboarding' ? (
             <HrOnboardingChecklist />
+          ) : activePage === 'recruitment-followup' ? (
+            <HrRecruitmentFollowUp currentUser={currentUser} />
+          ) : activePage === 'source-performance' ? (
+            <HrSourceRecruiterPerformance currentUser={currentUser} />
+          ) : activePage === 'mis-reports' ? (
+            <HrMisReports />
+          ) : activePage === 'master-settings' ? (
+            <HrMasterSettings />
+          ) : activePage === 'users-access' ? (
+            <HrUsersAndAccess currentUser={currentUser} />
+          ) : activePage === 'user-sessions' ? (
+            <HrUserSessions />
           ) : activePage === 'openings' ? (
             <HrOpenings onCountChange={setOpeningCounts} />
           ) : activePage === 'applications' ? (
@@ -2056,10 +2211,9 @@ export default function HomePage() {
             return;
           }
           setOtpTimer(Number(response?.expiresInSeconds) || 60);
+          setAuthStep('otp');
+          setAuthInfo(response?.message || 'OTP sent to your registered email. OTP is valid for 1 minute.');
         }
-
-        setAuthStep('otp');
-        setAuthInfo('OTP sent to your email. OTP is valid for 1 minute.');
       } else {
         const verifyPayload = {
           email: authForm.email.trim(),
@@ -2105,48 +2259,19 @@ export default function HomePage() {
             {authStep === 'credentials'
               ? authMode === 'forgot'
                 ? 'Enter your registered email to reset your password.'
-                : `Please ${authMode === 'signup' ? 'create an account' : 'login'} to continue.`
+                : `Please enter your Login ID / Email and password to continue.`
               : authMode === 'forgot'
                 ? 'Enter the OTP and create your new password.'
                 : 'Enter OTP sent to your email to continue.'}
           </p>
 
-          {authMode !== 'forgot' ? <div className="mt-5 flex justify-center">
-            <div className="inline-flex rounded-xl bg-black/35 p-1.5 backdrop-blur-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('login');
-                  setAuthStep('credentials');
-                  setShowPassword(false);
-                  setOtpTimer(0);
-                  setAuthError('');
-                  setAuthInfo('');
-                  setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
-                }}
-                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'login' ? 'bg-[#cc2727] text-white shadow-sm' : 'text-white/85'
-                  }`}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signup');
-                  setAuthStep('credentials');
-                  setShowPassword(false);
-                  setOtpTimer(0);
-                  setAuthError('');
-                  setAuthInfo('');
-                  setAuthForm((prev) => ({ ...prev, password: '', confirmPassword: '', otp: '' }));
-                }}
-                className={`rounded-lg px-6 py-2.5 text-base font-semibold ${authMode === 'signup' ? 'bg-[#cc2727] text-white shadow-sm' : 'text-white/85'
-                  }`}
-              >
-                Signup
-              </button>
+          {authMode !== 'forgot' ? (
+            <div className="mt-5 flex justify-center">
+              <div className="inline-flex rounded-xl bg-black/35 px-6 py-2 backdrop-blur-sm">
+                <span className="text-sm font-bold uppercase tracking-wider text-white">Login to Panel</span>
+              </div>
             </div>
-          </div> : (
+          ) : (
             <div className="mt-5 flex justify-center">
               <span className="rounded-full bg-black/35 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">Password Recovery</span>
             </div>
@@ -2185,11 +2310,11 @@ export default function HomePage() {
               />
             ) : null}
             <input
-              type="email"
+              type="text"
               name="email"
               value={authForm.email}
               onChange={handleAuthFieldChange}
-              placeholder="Email"
+              placeholder="Login ID or Email"
               required
               disabled={authStep === 'otp'}
               className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7] disabled:cursor-not-allowed disabled:bg-white/80"
@@ -2204,7 +2329,7 @@ export default function HomePage() {
                     onChange={handleAuthFieldChange}
                     placeholder="Password"
                     required
-                    minLength={10}
+                    minLength={6}
                     maxLength={128}
                     className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 pr-12 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
                   />
@@ -2246,7 +2371,7 @@ export default function HomePage() {
                         onChange={handleAuthFieldChange}
                         placeholder="New password"
                         required
-                        minLength={10}
+                        minLength={6}
                         maxLength={128}
                         autoComplete="new-password"
                         className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 pr-16 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
@@ -2260,7 +2385,7 @@ export default function HomePage() {
                       onChange={handleAuthFieldChange}
                       placeholder="Confirm new password"
                       required
-                      minLength={10}
+                      minLength={6}
                       maxLength={128}
                       autoComplete="new-password"
                       className="w-full rounded-xl border-0 bg-white/95 px-4 py-3 text-base text-zinc-800 shadow-lg outline-none focus:ring-2 focus:ring-[#2EA6F7]"
@@ -2301,12 +2426,8 @@ export default function HomePage() {
                     ? 'Send Password Reset OTP'
                     : 'Verify OTP & Reset Password'
                   : authStep === 'credentials'
-                  ? authMode === 'signup'
-                    ? 'Send OTP for Signup'
-                    : 'Send OTP for Login'
-                  : authMode === 'signup'
-                    ? 'Verify OTP and Create Account'
-                    : 'Verify OTP and Login'}
+                  ? 'Login to Panel'
+                  : 'Verify OTP and Login'}
             </button>
             {authMode === 'forgot' && authStep === 'credentials' ? (
               <button
@@ -2359,7 +2480,11 @@ export default function HomePage() {
   }
 
   if (currentRole === 'hr') {
-    return <HrPanel currentUser={currentUser} onLogout={handleLogout} />;
+    return (
+      <MasterProvider>
+        <HrPanel currentUser={currentUser} onLogout={handleLogout} />
+      </MasterProvider>
+    );
   }
 
   return (

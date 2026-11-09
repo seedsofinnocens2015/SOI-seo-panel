@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchRequisitions,
@@ -9,7 +11,7 @@ import {
   deleteRequisition,
 } from '../../lib/manpowerRequisitionApi';
 
-const DEFAULT_CENTRES = [
+const DEFAULT_CENTRES = []; const OBSOLETE_CENTRES = [
   'Malviya Nagar (Delhi)',
   'Jasola (Delhi)',
   'Janakpuri (Delhi)',
@@ -31,7 +33,7 @@ const DEFAULT_CENTRES = [
   'Corporate Office',
 ];
 
-const DEFAULT_DEPARTMENTS = [
+const DEFAULT_DEPARTMENTS = []; const OBSOLETE_DEPARTMENTS = [
   'Accounts & Finance',
   'Admin & Operations',
   'Billing',
@@ -85,9 +87,9 @@ const DEFAULT_DEPARTMENT_DESIGNATIONS = {
   'Sales & Marketing': ['Marketing Executive', 'Area Sales Manager', 'Territory Manager', 'Medical Representative'],
 };
 
-const HIRING_TYPES = ['New Vacancy', 'Replacement', 'Budgeted', 'Urgent'];
-const PRIORITIES = ['High', 'Medium', 'Low', 'Critical'];
-const APPROVAL_STATUSES = ['Pending', 'Approved', 'Rejected', 'On Hold'];
+const HIRING_TYPES = [];
+const PRIORITIES = [];
+const APPROVAL_STATUSES = [];
 
 function formatDateForInput(dateVal) {
   if (!dateVal) return '';
@@ -110,6 +112,14 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrRequisitions() {
+  const { getDropdown } = useMaster();
+  const masterCentres = getDropdown('centres');
+  const masterDepts = getDropdown('departments');
+  const masterDesignations = getDropdown('designations');
+  const masterHiringTypes = getDropdown('hiring_type');
+  const masterPriorities = getDropdown('priority');
+  const masterApprovalStatuses = getDropdown('approval_status');
+  const masterRecruiters = getDropdown('recruiters');
   const [requisitions, setRequisitions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -173,12 +183,12 @@ export default function HrRequisitions() {
   }, [formData.department, deptDesignations]);
 
   const allAvailableCentres = useMemo(() => {
-    const set = new Set(DEFAULT_CENTRES);
+    const set = new Set(masterCentres);
     requisitions.forEach((r) => {
       if (r.centre) set.add(r.centre);
     });
     return Array.from(set);
-  }, [requisitions]);
+  }, [requisitions, masterCentres]);
 
   async function handleOpenNew() {
     setError('');
@@ -445,7 +455,7 @@ export default function HrRequisitions() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {departments.map((d) => (
+                  {(masterDepts.length > 0 ? masterDepts : []).map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
@@ -486,7 +496,7 @@ export default function HrRequisitions() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {HIRING_TYPES.map((t) => (
+                  {(masterHiringTypes.length > 0 ? masterHiringTypes : []).map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
@@ -515,7 +525,7 @@ export default function HrRequisitions() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {PRIORITIES.map((p) => (
+                  {(masterPriorities.length > 0 ? masterPriorities : []).map((p) => (
                     <option key={p} value={p}>{p}</option>
                   ))}
                 </select>
@@ -547,7 +557,7 @@ export default function HrRequisitions() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {APPROVAL_STATUSES.map((s) => (
+                  {(masterApprovalStatuses.length > 0 ? masterApprovalStatuses : []).map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -565,13 +575,16 @@ export default function HrRequisitions() {
 
               <div>
                 <label className="text-xs font-bold text-zinc-700">Recruiter Assigned</label>
-                <input
-                  type="text"
+                <select
                   value={formData.recruiterAssigned}
                   onChange={(e) => setFormData({ ...formData, recruiterAssigned: e.target.value })}
-                  placeholder="Recruiter Name"
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
-                />
+                >
+                  <option value="">-- select recruiter --</option>
+                  {(masterRecruiters || []).map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

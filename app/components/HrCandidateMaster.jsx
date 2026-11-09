@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchCandidates,
@@ -10,7 +12,7 @@ import {
 } from '../../lib/candidateMasterApi';
 import { fetchRequisitions } from '../../lib/manpowerRequisitionApi';
 
-const SOURCES = ['Portal', 'LinkedIn', 'Referral', 'Direct', 'Consultancy', 'Naukri', 'Indeed', 'Internal', 'Other'];
+const SOURCES = [];
 
 function formatDateForInput(dateVal) {
   if (!dateVal) return '';
@@ -33,6 +35,10 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrCandidateMaster() {
+  const { getDropdown } = useMaster();
+  const masterSources = getDropdown('sources');
+  const masterCentres = getDropdown('centres');
+  const masterRecruiters = getDropdown('recruiters');
   const [candidates, setCandidates] = useState([]);
   const [requisitions, setRequisitions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +106,7 @@ export default function HrCandidateMaster() {
   }, [loadData]);
 
   const allAvailableCentres = useMemo(() => {
-    const set = new Set();
+    const set = new Set(masterCentres);
     requisitions.forEach((r) => {
       if (r.centre) set.add(r.centre);
     });
@@ -108,7 +114,7 @@ export default function HrCandidateMaster() {
       if (c.centre) set.add(c.centre);
     });
     return Array.from(set);
-  }, [requisitions, candidates]);
+  }, [requisitions, candidates, masterCentres]);
 
   const approvedRequisitions = useMemo(() => {
     return requisitions.filter(
@@ -493,7 +499,7 @@ export default function HrCandidateMaster() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {SOURCES.map((s) => (
+                  {masterSources.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -503,14 +509,17 @@ export default function HrCandidateMaster() {
             {/* Row 2 */}
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
               <div>
-                <label className="text-xs font-bold text-zinc-700">Recruiter (auto)</label>
-                <input
-                  type="text"
-                  readOnly
-                  placeholder="(select a requisition)"
+                <label className="text-xs font-bold text-zinc-700">Recruiter</label>
+                <select
                   value={formData.recruiter}
-                  className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-2.5 text-xs font-semibold text-zinc-600 outline-none cursor-not-allowed"
-                />
+                  onChange={(e) => setFormData({ ...formData, recruiter: e.target.value })}
+                  className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
+                >
+                  <option value="">-- select recruiter --</option>
+                  {(masterRecruiters || []).map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

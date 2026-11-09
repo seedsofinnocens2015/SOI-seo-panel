@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchChecklists,
@@ -9,27 +11,7 @@ import {
 } from '../../lib/onboardingChecklistApi';
 import { fetchCandidates } from '../../lib/candidateMasterApi';
 
-const DEFAULT_CENTRES = [
-  'Malviya Nagar (Delhi)',
-  'Jasola (Delhi)',
-  'Janakpuri (Delhi)',
-  'Ghaziabad (UP)',
-  'Noida (UP)',
-  'Faridabad (Haryana)',
-  'Gurugram (Haryana)',
-  'Meerut (UP)',
-  'Patna (Bihar)',
-  'Ranchi (Jharkhand)',
-  'Lucknow (UP)',
-  'Varanasi (UP)',
-  'Kanpur (UP)',
-  'Prayagraj (UP)',
-  'Bhubaneswar (Odisha)',
-  'Srinagar (J&K)',
-  'Agra (UP)',
-  'Bareilly (UP)',
-  'Corporate Office',
-];
+const DEFAULT_CENTRES = [];
 
 const CHECKLIST_FIELDS = [
   { key: 'offerLetterSigned', label: 'Offer Letter Signed' },
@@ -56,6 +38,9 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrOnboardingChecklist() {
+  const { getDropdown } = useMaster();
+  const masterCentres = getDropdown('centres');
+  const masterChecklistStatuses = getDropdown('checklist_status');
   const [checklists, setChecklists] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);

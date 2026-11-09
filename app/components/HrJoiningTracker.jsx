@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchJoinings,
@@ -9,27 +11,7 @@ import {
 } from '../../lib/joiningTrackerApi';
 import { fetchCandidates } from '../../lib/candidateMasterApi';
 
-const DEFAULT_CENTRES = [
-  'Malviya Nagar (Delhi)',
-  'Jasola (Delhi)',
-  'Janakpuri (Delhi)',
-  'Ghaziabad (UP)',
-  'Noida (UP)',
-  'Faridabad (Haryana)',
-  'Gurugram (Haryana)',
-  'Meerut (UP)',
-  'Patna (Bihar)',
-  'Ranchi (Jharkhand)',
-  'Lucknow (UP)',
-  'Varanasi (UP)',
-  'Kanpur (UP)',
-  'Prayagraj (UP)',
-  'Bhubaneswar (Odisha)',
-  'Srinagar (J&K)',
-  'Agra (UP)',
-  'Bareilly (UP)',
-  'Corporate Office',
-];
+const DEFAULT_CENTRES = [];
 
 const JOINING_STATUSES = [
   'Pending Joining',
@@ -60,6 +42,9 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrJoiningTracker() {
+  const { getDropdown } = useMaster();
+  const masterJoiningStatuses = getDropdown('joining_status');
+  const masterCentres = getDropdown('centres');
   const [joinings, setJoinings] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -347,7 +332,7 @@ export default function HrJoiningTracker() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {JOINING_STATUSES.map((s) => (
+                  {(masterJoiningStatuses.length > 0 ? masterJoiningStatuses : []).map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>

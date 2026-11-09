@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchInterviewRoundWise,
@@ -10,27 +12,7 @@ import {
 } from '../../lib/interviewTrackerApi';
 import { fetchCandidates } from '../../lib/candidateMasterApi';
 
-const DEFAULT_CENTRES = [
-  'Malviya Nagar (Delhi)',
-  'Jasola (Delhi)',
-  'Janakpuri (Delhi)',
-  'Ghaziabad (UP)',
-  'Noida (UP)',
-  'Faridabad (Haryana)',
-  'Gurugram (Haryana)',
-  'Meerut (UP)',
-  'Patna (Bihar)',
-  'Ranchi (Jharkhand)',
-  'Lucknow (UP)',
-  'Varanasi (UP)',
-  'Kanpur (UP)',
-  'Prayagraj (UP)',
-  'Bhubaneswar (Odisha)',
-  'Srinagar (J&K)',
-  'Agra (UP)',
-  'Bareilly (UP)',
-  'Corporate Office',
-];
+const DEFAULT_CENTRES = [];
 
 const ROUNDS_TABS = [
   'All rounds',
@@ -66,6 +48,12 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrInterviewTracker() {
+  const { getDropdown } = useMaster();
+  const masterRounds = getDropdown('interview_rounds');
+  const masterModes = getDropdown('interview_mode');
+  const masterStatuses = getDropdown('interview_status');
+  const masterResults = getDropdown('interview_result');
+  const masterCentres = getDropdown('centres');
   // View mode: 'candidate-wise' or 'round-wise'
   const [activeTabMode, setActiveTabMode] = useState('candidate-wise');
   const [selectedRoundFilter, setSelectedRoundFilter] = useState('All rounds');
@@ -135,12 +123,12 @@ export default function HrInterviewTracker() {
   }, [loadData]);
 
   const allAvailableCentres = useMemo(() => {
-    const set = new Set(DEFAULT_CENTRES);
+    const set = new Set(masterCentres);
     candidates.forEach((c) => {
       if (c.centre) set.add(c.centre);
     });
     return Array.from(set);
-  }, [candidates]);
+  }, [candidates, masterCentres]);
 
   function handleOpenNew(prefillCandidateId = '', prefillRound = '') {
     setError('');
@@ -483,7 +471,7 @@ export default function HrInterviewTracker() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {ROUNDS_TABS.filter((r) => r !== 'All rounds').map((r) => (
+                  {(masterRounds.length > 0 ? masterRounds : []).map((r) => (
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
@@ -530,7 +518,7 @@ export default function HrInterviewTracker() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {MODES.map((m) => (
+                  {(masterModes.length > 0 ? masterModes : []).map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
@@ -547,7 +535,7 @@ export default function HrInterviewTracker() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {STATUSES.map((s) => (
+                  {(masterStatuses.length > 0 ? masterStatuses : []).map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -561,7 +549,7 @@ export default function HrInterviewTracker() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {RESULTS.map((r) => (
+                  {(masterResults.length > 0 ? masterResults : []).map((r) => (
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>

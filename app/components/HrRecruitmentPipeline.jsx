@@ -1,5 +1,7 @@
 'use client';
 
+import { useMaster } from '../context/MasterContext';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchRecruitmentPipeline,
@@ -9,27 +11,7 @@ import {
 } from '../../lib/recruitmentPipelineApi';
 import { fetchCandidates } from '../../lib/candidateMasterApi';
 
-const DEFAULT_CENTRES = [
-  'Malviya Nagar (Delhi)',
-  'Jasola (Delhi)',
-  'Janakpuri (Delhi)',
-  'Ghaziabad (UP)',
-  'Noida (UP)',
-  'Faridabad (Haryana)',
-  'Gurugram (Haryana)',
-  'Meerut (UP)',
-  'Patna (Bihar)',
-  'Ranchi (Jharkhand)',
-  'Lucknow (UP)',
-  'Varanasi (UP)',
-  'Kanpur (UP)',
-  'Prayagraj (UP)',
-  'Bhubaneswar (Odisha)',
-  'Srinagar (J&K)',
-  'Agra (UP)',
-  'Bareilly (UP)',
-  'Corporate Office',
-];
+const DEFAULT_CENTRES = [];
 
 const DEFAULT_STAGES = [
   'Sourced',
@@ -76,6 +58,9 @@ function formatDateDisplay(dateVal) {
 }
 
 export default function HrRecruitmentPipeline() {
+  const { getDropdown } = useMaster();
+  const masterPipelineStages = getDropdown('pipeline_stages');
+  const masterCentres = getDropdown('centres');
   const [pipeline, setPipeline] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,12 +110,12 @@ export default function HrRecruitmentPipeline() {
   }, [loadData]);
 
   const allAvailableCentres = useMemo(() => {
-    const set = new Set(DEFAULT_CENTRES);
+    const set = new Set(masterCentres);
     pipeline.forEach((p) => {
       if (p.centre) set.add(p.centre);
     });
     return Array.from(set);
-  }, [pipeline]);
+  }, [pipeline, masterCentres]);
 
   function handleOpenNew() {
     setError('');
@@ -340,7 +325,7 @@ export default function HrRecruitmentPipeline() {
                   className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs font-semibold text-zinc-900 outline-none focus:bg-white focus:border-[#cc2627] focus:ring-4 focus:ring-[#cc2627]/10"
                 >
                   <option value="">-- select --</option>
-                  {DEFAULT_STAGES.map((s) => (
+                  {(masterPipelineStages.length > 0 ? masterPipelineStages : []).map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
