@@ -18,7 +18,7 @@ const list = data.centerBlogs || [];
 
 const centerPages = list.map((item) => ({
   label: item.hometitle || truncateLabel(item.title),
-  value: `/blog/${item.slug}`,
+  value: `/doctor/${item.slug}`,
 }));
 
 centerPages.sort((a, b) => a.label.localeCompare(b.label));
