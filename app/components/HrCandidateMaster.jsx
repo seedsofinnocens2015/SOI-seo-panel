@@ -9,7 +9,9 @@ import {
   createCandidate,
   updateCandidate,
   deleteCandidate,
+  parseCandidateCv,
 } from '../../lib/candidateMasterApi';
+import { parseCvFileClient } from '../../lib/cvParser';
 import { fetchRequisitions } from '../../lib/manpowerRequisitionApi';
 
 const SOURCES = [];
@@ -56,6 +58,7 @@ export default function HrCandidateMaster() {
 
   // Resume file and auto-fill state
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isParsingCv, setIsParsingCv] = useState(false);
   const [replaceValuesAlreadyTyped, setReplaceValuesAlreadyTyped] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -127,6 +130,7 @@ export default function HrCandidateMaster() {
     setSuccess('');
     setEditingId(null);
     setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     let nextId = 'CAN-0001';
     try {
       nextId = await fetchNextCandidateId();
@@ -213,25 +217,175 @@ export default function HrCandidateMaster() {
     }
   }
 
-  function handleReadCv() {
-    if (!selectedFile) {
+  async function handleReadCv(fileParam) {
+    const fileToRead = fileParam || selectedFile;
+    if (!fileToRead) {
       alert('Please choose a CV / Resume file first.');
       return;
     }
 
-    const fileName = selectedFile.name;
-    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '').replace(/[_\-\.]+/g, ' ');
+    setIsParsingCv(true);
+    setError('');
+    setSuccess('');
 
-    setFormData((prev) => {
-      const updated = { ...prev };
-      if (!updated.candidateName || replaceValuesAlreadyTyped) {
-        const clean = nameWithoutExt.replace(/\b(cv|resume|updated|profile)\b/gi, '').trim();
-        if (clean) updated.candidateName = clean;
+    try {
+      let parsedData = {};
+
+      // 1. Try server-side parser
+      try {
+        const res = await parseCandidateCv(fileToRead);
+        if (res?.ok && res?.data) {
+          parsedData = { ...res.data };
+        }
+      } catch (apiErr) {
+        // Fall back to client parser
       }
-      return updated;
-    });
 
-    setSuccess('CV parsed. Candidate details checked.');
+      // 2. Client-side parser: runs to fill any missing major fields
+      if (
+        !parsedData.candidateName ||
+        !parsedData.email ||
+        !parsedData.mobile ||
+        !parsedData.totalExpYrs ||
+        !parsedData.designation
+      ) {
+        try {
+          const clientRes = await parseCvFileClient(fileToRead, requisitions);
+          if (clientRes?.data) {
+            Object.entries(clientRes.data).forEach(([k, v]) => {
+              if (v && (!parsedData[k] || (k === 'email' && String(v).length > String(parsedData[k]).length))) {
+                parsedData[k] = v;
+              }
+            });
+          }
+        } catch (clientErr) {
+          console.warn('Client parser fallback error:', clientErr);
+        }
+      }
+
+      // 3. Fallback for candidateName from filename if still missing
+      if (!parsedData.candidateName && fileToRead.name) {
+        const cleanName = fileToRead.name
+          .replace(/\.[^/.]+$/, '')
+          .replace(/[-_.]+/g, ' ')
+          .replace(/\b(cv|resume|updated|profile|latest|biodata|for|of|doc|pdf|docx|txt|final|new|soi|seeds|job|candidate|applicant|\d+)\b/gi, '')
+          .trim();
+        if (cleanName.length >= 3) {
+          parsedData.candidateName = cleanName;
+        }
+      }
+
+      if (!parsedData || Object.keys(parsedData).length === 0) {
+        throw new Error('Unable to extract details from this CV format. Please check the file.');
+      }
+
+      const filledNames = [];
+
+      setFormData((prev) => {
+        const updated = { ...prev };
+        const replace = replaceValuesAlreadyTyped;
+
+        if (parsedData.candidateName && (!updated.candidateName || replace)) {
+          updated.candidateName = parsedData.candidateName;
+          filledNames.push('Name');
+        }
+        if (parsedData.mobile && (!updated.mobile || replace)) {
+          updated.mobile = parsedData.mobile;
+          filledNames.push('Mobile');
+        }
+        if (parsedData.email && (!updated.email || replace)) {
+          updated.email = parsedData.email;
+          filledNames.push('Email');
+        }
+        if (parsedData.totalExpYrs && (!updated.totalExpYrs || replace)) {
+          updated.totalExpYrs = String(parsedData.totalExpYrs);
+          filledNames.push('Experience');
+        }
+        if (parsedData.currentCtcLakh && (!updated.currentCtcLakh || replace)) {
+          updated.currentCtcLakh = String(parsedData.currentCtcLakh);
+          filledNames.push('Current CTC');
+        }
+        if (parsedData.expectedCtcLakh && (!updated.expectedCtcLakh || replace)) {
+          updated.expectedCtcLakh = String(parsedData.expectedCtcLakh);
+          filledNames.push('Expected CTC');
+        }
+        if (
+          parsedData.noticePeriodDays !== undefined &&
+          parsedData.noticePeriodDays !== '' &&
+          (!updated.noticePeriodDays || replace)
+        ) {
+          updated.noticePeriodDays = String(parsedData.noticePeriodDays);
+          filledNames.push('Notice Period');
+        }
+        if (parsedData.currentLocation && (!updated.currentLocation || replace)) {
+          updated.currentLocation = parsedData.currentLocation;
+          filledNames.push('Location');
+        }
+        if (parsedData.designation && (!updated.designation || replace)) {
+          updated.designation = parsedData.designation;
+          filledNames.push('Designation');
+        }
+        if (parsedData.department && (!updated.department || replace)) {
+          updated.department = parsedData.department;
+          filledNames.push('Department');
+        }
+        if (parsedData.source && (!updated.source || updated.source === 'Direct' || replace)) {
+          updated.source = parsedData.source;
+          filledNames.push('Source');
+        }
+        if (parsedData.remarks && (!updated.remarks || replace)) {
+          updated.remarks = parsedData.remarks;
+          filledNames.push('Remarks');
+        }
+
+        // Auto-match approved Requisition if possible
+        let targetReqId = parsedData.requisitionId;
+        if (!targetReqId && (parsedData.designation || parsedData.department)) {
+          const approvedReqs = requisitions.filter(
+            (r) => !r.approvalStatus || r.approvalStatus.toLowerCase() === 'approved'
+          );
+          const pool = approvedReqs.length > 0 ? approvedReqs : requisitions;
+          const matched = pool.find((r) => {
+            if (parsedData.designation && r.designation) {
+              const d1 = r.designation.toLowerCase();
+              const d2 = parsedData.designation.toLowerCase();
+              if (d1.includes(d2) || d2.includes(d1)) return true;
+            }
+            if (parsedData.department && r.department) {
+              if (r.department.toLowerCase() === parsedData.department.toLowerCase()) return true;
+            }
+            return false;
+          });
+          if (matched) targetReqId = matched._id;
+        }
+
+        if (targetReqId && (!updated.requisitionId || replace)) {
+          const selReq = requisitions.find((r) => r._id === targetReqId);
+          if (selReq) {
+            updated.requisitionId = targetReqId;
+            if (!updated.centre || replace) updated.centre = selReq.centre || '';
+            if (!updated.department || replace) updated.department = selReq.department || '';
+            if (!updated.designation || replace) updated.designation = selReq.designation || '';
+            if (selReq.recruiterAssigned && (!updated.recruiter || replace)) {
+              updated.recruiter = selReq.recruiterAssigned;
+            }
+            filledNames.push('Requisition');
+          }
+        }
+
+        return updated;
+      });
+
+      if (filledNames.length > 0) {
+        setSuccess(`CV read & auto-filled successfully! Updated: ${filledNames.join(', ')}.`);
+      } else {
+        setSuccess('CV read. Please check details before saving.');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to read CV.');
+    } finally {
+      setIsParsingCv(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -251,6 +405,7 @@ export default function HrCandidateMaster() {
       setIsFormOpen(false);
       setEditingId(null);
       setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       await loadData();
     } catch (err) {
       setError(err.message || 'Failed to save candidate');
@@ -384,15 +539,34 @@ export default function HrCandidateMaster() {
                   type="file"
                   ref={fileInputRef}
                   accept=".pdf,.doc,.docx,.txt"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setSelectedFile(file);
+                    if (file) {
+                      handleReadCv(file);
+                    }
+                  }}
                   className="text-xs text-zinc-700 file:mr-3 file:rounded-xl file:border file:border-zinc-200 file:bg-white file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-zinc-700 hover:file:bg-zinc-50 file:shadow-sm"
                 />
                 <button
                   type="button"
-                  onClick={handleReadCv}
-                  className="rounded-xl bg-[#214b77] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#1a3d61]"
+                  disabled={isParsingCv}
+                  onClick={() => handleReadCv()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#214b77] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#1a3d61] disabled:opacity-60"
                 >
-                  Read CV & auto-fill
+                  {isParsingCv ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span>Reading CV...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>Read CV & auto-fill</span>
+                    </>
+                  )}
                 </button>
                 <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
                   <input

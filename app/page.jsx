@@ -1031,13 +1031,13 @@ function HrPanel({ currentUser: initialUser, onLogout }) {
   }, []);
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
-      <div className="flex min-h-full">
+    <main className="flex h-full min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-[#f8fbff] via-white to-[#fff7f9]">
+      <div className="flex h-full w-full min-h-0 overflow-hidden">
         {isMobileSidebarOpen ? (
           <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] lg:hidden" aria-label="Close HR navigation" />
         ) : null}
-        <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-[min(88vw,340px)] shrink-0 flex-col border-r border-zinc-200/70 bg-white p-5 shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:w-[280px] lg:translate-x-0 lg:shadow-none ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="flex flex-col gap-5 pb-6 border-b border-zinc-100 mb-6">
+        <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-[min(88vw,340px)] shrink-0 flex-col border-r border-zinc-200/70 bg-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-[280px] lg:translate-x-0 lg:shadow-none ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="shrink-0 flex flex-col gap-4 p-5 pb-4 border-b border-zinc-100">
             <div className="flex items-center justify-between">
               <Image src="/Header Logo.svg" alt="Seeds of Innocence" width={220} height={68} priority className="h-auto w-full max-w-[170px]" />
               <button type="button" onClick={() => setIsMobileSidebarOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 lg:hidden" aria-label="Close HR navigation">✕</button>
@@ -1048,8 +1048,8 @@ function HrPanel({ currentUser: initialUser, onLogout }) {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1.5" aria-label="HR navigation">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Menu</p>
+          <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-3 space-y-1.5 overscroll-contain" aria-label="HR navigation">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Menu</p>
             {visibleNavItems.map((item) => {
               const isActive = activePage === item.id;
               return (
@@ -1076,7 +1076,7 @@ function HrPanel({ currentUser: initialUser, onLogout }) {
             })}
           </nav>
 
-          <div className="mt-auto pt-6 pb-2">
+          <div className="shrink-0 p-4 pt-3 border-t border-zinc-100 bg-white">
             <div className="rounded-2xl bg-gradient-to-br from-zinc-50 to-zinc-100/50 border border-zinc-200/60 p-5 relative overflow-hidden group hover:border-zinc-300 transition-colors">
                <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
                  <svg className="w-20 h-20 transform translate-x-4 -translate-y-4 text-[#cc2627]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>
@@ -1087,7 +1087,7 @@ function HrPanel({ currentUser: initialUser, onLogout }) {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 p-3 sm:p-6 lg:p-8">
+        <section className="h-full min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 overscroll-contain">
           <header className="flex items-center justify-between gap-3 border-b border-zinc-200 pb-5 sm:gap-4 sm:pb-6">
             <div className="flex items-center gap-4 min-w-0">
               <button type="button" onClick={() => setIsMobileSidebarOpen(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-zinc-300 bg-white text-zinc-700 shadow-sm transition hover:bg-zinc-50 lg:hidden" aria-label="Open HR navigation">
