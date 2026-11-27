@@ -61,6 +61,15 @@ const PAGE_TREE = [
     ],
   },
   {
+    label: 'Seeds of Innocence Surgical Centre',
+    children: [
+      { label: 'Surgical Centre (Main Landing Page)', value: '/seeds-of-innocens-surgical-center' },
+      { label: 'Privacy Policy', value: '/surgical-centre/privacy-policy' },
+      { label: 'Terms & Conditions', value: '/surgical-centre/terms-and-conditions' },
+      { label: 'Thank You Page', value: '/surgical-centre/thank-you' },
+    ],
+  },
+  {
     label: 'Infertility Treatment',
     children: [
       {
@@ -338,7 +347,6 @@ const PAGE_TREE = [
               { label: 'Mauritius, East Africa', value: '/best-ivf-centre-in-mauritius' },
               { label: 'Sri Lanka', value: '/best-ivf-centre-in-sri-lanka' },
               { label: 'Bangladesh', value: '/best-ivf-centre-in-bangladesh' },
-              { label: 'Surgical Center', value: '/seeds-of-innocens-surgical-center' },
             ],
           },
         ],
